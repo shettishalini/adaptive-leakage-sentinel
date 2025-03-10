@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -34,6 +33,19 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.8rem;
+
+    /* Green colors */
+    --green-50: 138 76% 97%;
+    --green-100: 141 84% 93%;
+    --green-200: 141 79% 85%;
+    --green-300: 142 77% 73%;
+    --green-400: 142 69% 58%;
+    --green-500: 142 71% 45%;
+    --green-600: 142 76% 36%;
+    --green-700: 142 72% 29%;
+    --green-800: 143 64% 24%;
+    --green-900: 144 61% 20%;
+    --green-950: 145 80% 10%;
 
     /* Sidebar colors */
     --sidebar-background: 0 0% 98%;
@@ -149,8 +161,20 @@
   background-size: 200% 200%;
 }
 
+/* Green gradient text */
+.gradient-text-green {
+  @apply inline-block text-transparent bg-clip-text bg-gradient-to-r from-[hsl(var(--green-500))] to-[hsl(var(--green-600))] animate-gradient-shift;
+  background-size: 200% 200%;
+}
+
 /* Digital pattern */
 .digital-pattern {
   background-image: radial-gradient(rgba(0, 128, 255, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Green digital pattern */
+.digital-pattern-green {
+  background-image: radial-gradient(hsla(var(--green-500), 0.1) 1px, transparent 1px);
   background-size: 20px 20px;
 }
