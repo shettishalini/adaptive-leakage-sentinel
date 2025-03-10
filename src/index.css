@@ -112,7 +112,7 @@
   }
 
   /* Transitioning elements */
-  .transition-all {
+  .custom-transition {
     @apply transition-all duration-300 ease-in-out;
   }
 
