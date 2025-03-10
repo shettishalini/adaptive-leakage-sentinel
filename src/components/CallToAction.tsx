@@ -24,12 +24,12 @@ const CallToAction = () => {
   }, []);
 
   return (
-    <section id="cta" className="py-20 bg-blue-50 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-100/50 to-transparent" />
+    <section id="cta" className="py-20 bg-green-50 relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-green-100/50 to-transparent" />
 
       <div className="container mx-auto px-6 relative z-10">
         <div
-          className={`glass rounded-2xl border border-blue-100 shadow-xl p-8 md:p-12 max-w-4xl mx-auto transition-all duration-1000 ${
+          className={`glass rounded-2xl border border-green-100/30 shadow-xl p-8 md:p-12 max-w-4xl mx-auto transition-all duration-1000 ${
             isVisible
               ? "opacity-100 transform translate-y-0"
               : "opacity-0 transform translate-y-20"
@@ -37,7 +37,7 @@ const CallToAction = () => {
         >
           <div className="flex flex-col lg:flex-row items-center gap-8">
             <div className="flex-1">
-              <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-6">
+              <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mb-6">
                 <Shield className="h-8 w-8 text-white" />
               </div>
               <h2 className="text-3xl font-bold mb-4">
@@ -49,7 +49,7 @@ const CallToAction = () => {
                 safeguard your valuable information.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 h-auto rounded-md">
+                <Button className="bg-green-600 hover:bg-green-700 text-white px-8 py-6 h-auto rounded-md shadow-md shadow-green-200">
                   Request a Demo
                 </Button>
                 <Button
@@ -72,7 +72,7 @@ const CallToAction = () => {
                     <input
                       type="text"
                       id="name"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600"
                       placeholder="John Doe"
                     />
                   </div>
@@ -83,7 +83,7 @@ const CallToAction = () => {
                     <input
                       type="text"
                       id="company"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600"
                       placeholder="Acme Inc."
                     />
                   </div>
@@ -94,7 +94,7 @@ const CallToAction = () => {
                     <input
                       type="email"
                       id="email"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600"
                       placeholder="john@company.com"
                     />
                   </div>
@@ -105,11 +105,11 @@ const CallToAction = () => {
                     <input
                       type="tel"
                       id="phone"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600"
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-white px-4 py-2 h-auto rounded-md flex items-center justify-center gap-2">
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 h-auto rounded-md flex items-center justify-center gap-2">
                     Schedule Demo <ArrowRight className="h-4 w-4" />
                   </Button>
                 </form>

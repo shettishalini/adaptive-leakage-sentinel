@@ -28,7 +28,7 @@ const Navbar = () => {
     <header
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
         isScrolled
-          ? "py-2 bg-white/80 backdrop-blur-md shadow-sm"
+          ? "py-2 bg-white/90 backdrop-blur-md shadow-sm"
           : "py-4 bg-transparent"
       }`}
     >
@@ -38,8 +38,8 @@ const Navbar = () => {
           className="flex items-center gap-2 font-semibold text-lg"
         >
           <svg 
-            width="24" 
-            height="24" 
+            width="28" 
+            height="28" 
             viewBox="0 0 24 24" 
             fill="none" 
             xmlns="http://www.w3.org/2000/svg"
@@ -60,39 +60,39 @@ const Navbar = () => {
               strokeLinejoin="round" 
             />
           </svg>
-          <span className={`${isScrolled ? "text-gray-900" : "text-gray-900"}`}>
+          <span className="text-gray-900 font-bold">
             SentinelAI
           </span>
         </a>
 
         {/* Desktop navigation */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-6">
           <a
             href="#features"
-            className="text-sm font-medium text-gray-600 hover:text-primary transition-colors"
+            className="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors"
           >
             Features
           </a>
           <a
             href="#dashboard"
-            className="text-sm font-medium text-gray-600 hover:text-primary transition-colors"
+            className="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors"
           >
             Dashboard
           </a>
           <a
             href="#how-it-works"
-            className="text-sm font-medium text-gray-600 hover:text-primary transition-colors"
+            className="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors"
           >
             How It Works
           </a>
           <Button
             variant="ghost"
-            className="text-sm font-medium hover:bg-primary/10 hover:text-primary"
+            className="text-sm font-medium hover:bg-green-50 hover:text-green-600"
           >
             Log In
           </Button>
           <Button
-            className="text-sm font-medium bg-primary hover:bg-primary/90"
+            className="text-sm font-medium bg-green-600 hover:bg-green-700 text-white"
             size="sm"
           >
             Request Demo
@@ -122,21 +122,21 @@ const Navbar = () => {
         <nav className="flex flex-col gap-6">
           <a
             href="#features"
-            className="text-lg font-medium text-gray-900 hover:text-primary transition-colors"
+            className="text-lg font-medium text-gray-900 hover:text-green-600 transition-colors"
             onClick={toggleMobileMenu}
           >
             Features
           </a>
           <a
             href="#dashboard"
-            className="text-lg font-medium text-gray-900 hover:text-primary transition-colors"
+            className="text-lg font-medium text-gray-900 hover:text-green-600 transition-colors"
             onClick={toggleMobileMenu}
           >
             Dashboard
           </a>
           <a
             href="#how-it-works"
-            className="text-lg font-medium text-gray-900 hover:text-primary transition-colors"
+            className="text-lg font-medium text-gray-900 hover:text-green-600 transition-colors"
             onClick={toggleMobileMenu}
           >
             How It Works
@@ -144,13 +144,13 @@ const Navbar = () => {
           <div className="flex flex-col gap-4 mt-6">
             <Button
               variant="ghost"
-              className="w-full justify-center"
+              className="w-full justify-center hover:bg-green-50 hover:text-green-600"
               onClick={toggleMobileMenu}
             >
               Log In
             </Button>
             <Button
-              className="w-full justify-center"
+              className="w-full justify-center bg-green-600 hover:bg-green-700 text-white"
               onClick={toggleMobileMenu}
             >
               Request Demo

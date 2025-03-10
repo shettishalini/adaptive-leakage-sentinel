@@ -82,12 +82,12 @@ const Features = () => {
       className="py-20 bg-white relative overflow-hidden"
     >
       {/* Abstract background elements */}
-      <div className="absolute top-0 left-0 w-full h-full digital-pattern opacity-50" />
+      <div className="absolute top-0 left-0 w-full h-full digital-pattern-green opacity-25" />
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-block px-4 py-1 rounded-full bg-blue-50 border border-blue-100 mb-4">
-            <p className="text-xs font-medium text-blue-700">Advanced Capabilities</p>
+          <div className="inline-block px-4 py-1.5 rounded-full bg-green-50 border border-green-100 mb-4">
+            <p className="text-xs font-medium text-green-700">Advanced Capabilities</p>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Comprehensive Data Leakage Protection
@@ -112,8 +112,8 @@ const Features = () => {
                 transitionDuration: "700ms",
               }}
             >
-              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-5">
-                <feature.icon className="h-6 w-6 text-primary" />
+              <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-5">
+                <feature.icon className="h-6 w-6 text-green-600" />
               </div>
               <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
               <p className="text-gray-600">{feature.description}</p>
@@ -121,7 +121,7 @@ const Features = () => {
           ))}
         </div>
 
-        <div className="mt-16 bg-gray-50 rounded-2xl p-8 border border-gray-100">
+        <div className="mt-16 bg-green-50/50 rounded-2xl p-8 border border-green-100">
           <div className="text-center max-w-2xl mx-auto mb-10">
             <h3 className="text-2xl font-bold mb-4">Why Our Solution Stands Out</h3>
             <p className="text-gray-600">
@@ -159,29 +159,29 @@ const Features = () => {
                 </li>
               </ul>
             </div>
-            <div className="bg-blue-50 rounded-xl p-6 shadow-sm">
-              <h4 className="text-lg font-semibold mb-4 text-primary">Our Adaptive System</h4>
+            <div className="bg-green-50 rounded-xl p-6 shadow-sm">
+              <h4 className="text-lg font-semibold mb-4 text-green-700">Our Adaptive System</h4>
               <ul className="space-y-3">
                 <li className="flex items-start gap-3">
-                  <div className="min-w-5 min-h-5 rounded-full bg-primary flex items-center justify-center mt-1">
+                  <div className="min-w-5 min-h-5 rounded-full bg-green-600 flex items-center justify-center mt-1">
                     <Check className="h-3 w-3 text-white" />
                   </div>
                   <p className="text-gray-700">Self-learning algorithms</p>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="min-w-5 min-h-5 rounded-full bg-primary flex items-center justify-center mt-1">
+                  <div className="min-w-5 min-h-5 rounded-full bg-green-600 flex items-center justify-center mt-1">
                     <Check className="h-3 w-3 text-white" />
                   </div>
                   <p className="text-gray-700">Automatic model updates</p>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="min-w-5 min-h-5 rounded-full bg-primary flex items-center justify-center mt-1">
+                  <div className="min-w-5 min-h-5 rounded-full bg-green-600 flex items-center justify-center mt-1">
                     <Check className="h-3 w-3 text-white" />
                   </div>
                   <p className="text-gray-700">Reduced false positives over time</p>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="min-w-5 min-h-5 rounded-full bg-primary flex items-center justify-center mt-1">
+                  <div className="min-w-5 min-h-5 rounded-full bg-green-600 flex items-center justify-center mt-1">
                     <Check className="h-3 w-3 text-white" />
                   </div>
                   <p className="text-gray-700">Advanced anomaly detection</p>
