@@ -3,108 +3,38 @@ import { useState } from "react";
 import { Upload, FileText, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useDataset, DatasetMetrics } from "@/contexts/DatasetContext";
+import { useDataset } from "@/contexts/DatasetContext";
 
 const DatasetUpload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const { toast } = useToast();
-  const { setIsDatasetUploaded, setMetrics } = useDataset();
+  const { setIsDatasetUploaded, setMetrics, processCSVFile } = useDataset();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      // Check if it's a CSV file
+      if (!selectedFile.name.toLowerCase().endsWith('.csv')) {
+        toast({
+          title: "Invalid file format",
+          description: "Please upload a CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setFile(selectedFile);
       setUploadSuccess(false);
     }
   };
 
-  // Helper function to generate random data
-  const generateRandomMetrics = (): DatasetMetrics => {
-    // Generate random user stats
-    const totalUsers = Math.floor(Math.random() * 2000) + 800;
-    const activeUsers = Math.floor(totalUsers * (0.7 + Math.random() * 0.2));
-    const newUsers = Math.floor(Math.random() * 50) + 10;
-    const unapprovedUsers = Math.floor(Math.random() * 30) + 5;
-
-    // Generate random leakage stats
-    const incidents = Math.floor(Math.random() * 20) + 5;
-    const criticalRisk = Math.floor(incidents * (0.1 + Math.random() * 0.2));
-    const mediumRisk = Math.floor(incidents * (0.3 + Math.random() * 0.3));
-    const lowRisk = incidents - criticalRisk - mediumRisk;
-    const mitigated = Math.floor(incidents * (0.5 + Math.random() * 0.4));
-
-    // Generate network data
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const networkData = days.map(day => ({
-      name: day,
-      Traffic: Math.floor(Math.random() * 200) + 50,
-      Alerts: Math.floor(Math.random() * 30) + 1
-    }));
-
-    // Generate anomaly distribution
-    const anomalyTypes = ['Network', 'File Access', 'User Behavior', 'Database'];
-    const anomalyDistribution = anomalyTypes.map(type => ({
-      name: type,
-      value: Math.floor(Math.random() * 50) + 5
-    }));
-
-    // Generate alerts
-    const alertTypes = [
-      { type: 'file', title: 'Large File Upload', description: 'User uploaded a large file to an external service', severity: 'medium' },
-      { type: 'database', title: 'Database Query', description: 'Unusual query pattern accessing customer PII data', severity: 'medium' },
-      { type: 'network', title: 'Suspicious Connection', description: 'Connection to unrecognized IP address detected', severity: 'high' },
-      { type: 'user', title: 'Multiple Login Attempts', description: 'Multiple failed login attempts from different locations', severity: 'high' },
-      { type: 'file', title: 'Sensitive Data Access', description: 'Unauthorized access to sensitive files', severity: 'high' },
-      { type: 'user', title: 'Unusual Activity Hours', description: 'User activity detected outside normal working hours', severity: 'low' }
-    ];
-    
-    const alerts = [];
-    const usedAlerts = new Set();
-    
-    // Pick 3-5 random alerts
-    const numAlerts = Math.floor(Math.random() * 3) + 3;
-    while (alerts.length < numAlerts && usedAlerts.size < alertTypes.length) {
-      const randomIndex = Math.floor(Math.random() * alertTypes.length);
-      if (!usedAlerts.has(randomIndex)) {
-        usedAlerts.add(randomIndex);
-        const alert = alertTypes[randomIndex];
-        const minutesAgo = Math.floor(Math.random() * 60) + 1;
-        alerts.push({
-          ...alert,
-          time: `${minutesAgo}m ago`,
-          severity: alert.severity as "low" | "medium" | "high"
-        });
-      }
-    }
-
-    return {
-      userStats: {
-        total: totalUsers,
-        active: activeUsers,
-        new: newUsers,
-        unapproved: unapprovedUsers
-      },
-      dataLeakageStats: {
-        potentialIncidents: incidents,
-        criticalRisk,
-        mediumRisk,
-        lowRisk,
-        mitigated
-      },
-      networkData,
-      anomalyDistribution,
-      alerts,
-      lastUpdated: new Date()
-    };
-  };
-
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!file) {
       toast({
         title: "No file selected",
-        description: "Please select a dataset file to upload",
+        description: "Please select a CSV dataset file to upload",
         variant: "destructive",
       });
       return;
@@ -112,21 +42,18 @@ const DatasetUpload = () => {
 
     setUploading(true);
     
-    // Simulate upload process and data analysis
-    setTimeout(() => {
-      // Generate mock metrics
-      const metrics = generateRandomMetrics();
+    try {
+      // Process the CSV file
+      const metrics = await processCSVFile(file);
       
-      // Update context with the metrics
+      // Update context with the processed metrics
       setMetrics(metrics);
       setIsDatasetUploaded(true);
       
-      setUploading(false);
       setUploadSuccess(true);
-      
       toast({
         title: "Upload successful",
-        description: "Your dataset has been analyzed successfully",
+        description: "Your CSV dataset has been analyzed successfully",
       });
       
       // Scroll to dashboard after successful upload
@@ -136,8 +63,16 @@ const DatasetUpload = () => {
           dashboardElement.scrollIntoView({ behavior: 'smooth' });
         }
       }, 1000);
-      
-    }, 2000);
+    } catch (error) {
+      console.error("Error processing CSV file:", error);
+      toast({
+        title: "Upload failed",
+        description: "There was an error processing your CSV file. Please ensure it's a valid CSV format.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -148,6 +83,16 @@ const DatasetUpload = () => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile) {
+      // Check if it's a CSV file
+      if (!droppedFile.name.toLowerCase().endsWith('.csv')) {
+        toast({
+          title: "Invalid file format",
+          description: "Please upload a CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setFile(droppedFile);
       setUploadSuccess(false);
     }
@@ -158,10 +103,10 @@ const DatasetUpload = () => {
       <div className="container mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Upload Your Dataset
+            Upload Your CSV Dataset
           </h2>
           <p className="text-gray-600">
-            Securely upload your dataset files for analysis and protection
+            Upload your CSV dataset for real-time threat analysis and protection
           </p>
         </div>
 
@@ -177,7 +122,7 @@ const DatasetUpload = () => {
               <div className="flex flex-col items-center">
                 <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
                 <h3 className="text-xl font-semibold text-green-700">Upload Complete!</h3>
-                <p className="text-gray-600 mt-2 mb-4">Your dataset has been uploaded successfully</p>
+                <p className="text-gray-600 mt-2 mb-4">Your dataset has been uploaded and analyzed</p>
                 <Button
                   onClick={() => setUploadSuccess(false)}
                   className="mt-2"
@@ -192,7 +137,7 @@ const DatasetUpload = () => {
                   type="file"
                   id="datasetFile"
                   className="hidden"
-                  accept=".csv,.xlsx,.json,.xml"
+                  accept=".csv"
                   onChange={handleFileChange}
                 />
                 <label
@@ -201,12 +146,12 @@ const DatasetUpload = () => {
                 >
                   <Upload className="h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-semibold">
-                    {file ? file.name : "Drag & Drop your dataset here"}
+                    {file ? file.name : "Drag & Drop your CSV dataset here"}
                   </h3>
                   <p className="text-sm text-gray-500 mt-2 mb-4">
                     {file
                       ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
-                      : "Supported formats: CSV, XLSX, JSON, XML"}
+                      : "Only CSV files are supported"}
                   </p>
                   {!file && (
                     <Button variant="outline" className="mt-2">
@@ -241,7 +186,7 @@ const DatasetUpload = () => {
                       disabled={uploading}
                       className="w-full"
                     >
-                      {uploading ? "Uploading..." : "Upload Dataset"}
+                      {uploading ? "Analyzing..." : "Analyze Dataset"}
                     </Button>
                   </div>
                 )}
@@ -250,25 +195,25 @@ const DatasetUpload = () => {
           </div>
 
           <div className="mt-8 bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">How it works</h3>
+            <h3 className="text-lg font-semibold mb-4">CSV Dataset Requirements</h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <span className="text-xs font-bold text-primary">1</span>
                 </div>
-                <p className="text-sm text-gray-600">Upload your dataset in any of the supported formats</p>
+                <p className="text-sm text-gray-600">Upload a properly formatted CSV file with headers in the first row</p>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <span className="text-xs font-bold text-primary">2</span>
                 </div>
-                <p className="text-sm text-gray-600">Our system will analyze the data for potential security threats</p>
+                <p className="text-sm text-gray-600">Ensure data columns are properly separated by commas</p>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <span className="text-xs font-bold text-primary">3</span>
                 </div>
-                <p className="text-sm text-gray-600">View detailed reports and recommendations for protecting your data</p>
+                <p className="text-sm text-gray-600">For best threat analysis, include columns with user, network, or access information</p>
               </li>
             </ul>
           </div>
