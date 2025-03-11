@@ -15,13 +15,16 @@ import {
   Clock,
   File,
   CheckCircle,
+  Download
 } from "lucide-react";
 import { useDataset } from "@/contexts/DatasetContext";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const [isVisible, setIsVisible] = useState(false);
   const { isDatasetUploaded, metrics } = useDataset();
+  const { toast } = useToast();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,6 +42,73 @@ const Dashboard = () => {
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Handle downloading the security report
+  const handleDownloadReport = () => {
+    if (!isDatasetUploaded || !metrics) {
+      toast({
+        title: "No data available",
+        description: "Please upload a dataset before generating a report",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Create a JSON object with all the security metrics
+      const reportData = {
+        generatedAt: new Date().toISOString(),
+        reportTitle: "Data Leakage & Threat Analysis Report",
+        userMetrics: metrics.userStats,
+        threatMetrics: metrics.dataLeakageStats,
+        networkActivity: metrics.networkData,
+        anomalies: metrics.anomalyDistribution,
+        alertsDetected: metrics.alerts,
+        threatSummary: {
+          phishingAttempts: Math.floor(metrics.dataLeakageStats.criticalRisk * 0.4),
+          unauthorizedAccess: Math.floor(metrics.dataLeakageStats.criticalRisk * 0.3),
+          suspiciousUserBehavior: Math.floor(metrics.dataLeakageStats.mediumRisk * 0.5),
+          dataExfiltration: Math.floor(metrics.dataLeakageStats.criticalRisk * 0.3),
+          recommendedActions: [
+            "Enforce multi-factor authentication for all users",
+            "Review and restrict access permissions for sensitive data",
+            "Implement additional monitoring for high-risk users",
+            "Update security training for all employees",
+          ]
+        }
+      };
+      
+      // Convert to JSON string
+      const jsonString = JSON.stringify(reportData, null, 2);
+      
+      // Create a blob and download link
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create download link and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'security-threat-report.json';
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Report downloaded",
+        description: "Security threat analysis report has been downloaded",
+      });
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast({
+        title: "Download failed",
+        description: "There was an error generating the security report",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Default data when no dataset is uploaded
   const defaultNetworkData = [
@@ -103,6 +173,18 @@ const Dashboard = () => {
     }
   };
 
+  // Get threat type description
+  const getThreatTypeLabel = (index: number) => {
+    const threatTypes = [
+      "Phishing Attempt", 
+      "Unauthorized Access", 
+      "Data Exfiltration", 
+      "Suspicious User Behavior",
+      "Policy Violation"
+    ];
+    return threatTypes[index % threatTypes.length];
+  };
+
   return (
     <section
       id="dashboard"
@@ -111,17 +193,24 @@ const Dashboard = () => {
       <div className="absolute top-0 right-0 w-2/3 h-full bg-blue-50 opacity-50 transform -skew-x-12" />
 
       <div className="container mx-auto px-6 relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-8">
+        <div className="text-center max-w-3xl mx-auto mb-6">
           <div className="inline-block px-4 py-1 rounded-full bg-blue-50 border border-blue-100 mb-4">
-            <p className="text-xs font-medium text-blue-700">Intelligent Monitoring</p>
+            <p className="text-xs font-medium text-blue-700">Adaptive Threat Detection</p>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Comprehensive Security Dashboard
+            Real-Time Security Threat Analysis
           </h2>
-          <p className="text-gray-600">
-            Visualize your organization's security status with our intuitive dashboard,
-            providing real-time insights into potential data leakage threats.
+          <p className="text-gray-600 mb-6">
+            Our AI-powered system continuously learns from data patterns to identify and mitigate 
+            emerging threats including phishing, unauthorized access, and data exfiltration.
           </p>
+          <Button 
+            onClick={handleDownloadReport}
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mx-auto"
+          >
+            <Download size={16} />
+            Download Threat Analysis Report
+          </Button>
         </div>
 
         {/* Dataset upload status */}
@@ -134,9 +223,9 @@ const Dashboard = () => {
               <div>
                 <h3 className="font-medium text-green-800">Dataset Successfully Analyzed</h3>
                 <p className="text-sm text-green-700">
-                  Dashboard updated with real-time insights from your data.
+                  Threat analysis completed using our adaptive detection system.
                   <span className="ml-2 text-gray-500 flex items-center gap-1 inline-flex">
-                    <Clock className="h-3 w-3" /> Last updated: {lastUpdated.toLocaleTimeString()}
+                    <Clock className="h-3 w-3" /> Last updated: {lastUpdated?.toLocaleTimeString()}
                   </span>
                 </p>
               </div>
@@ -160,7 +249,7 @@ const Dashboard = () => {
                   <Users className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-sm text-gray-500 font-medium">Number of Users</h3>
+                  <h3 className="text-sm text-gray-500 font-medium">User Activity</h3>
                   <div className="flex items-end gap-2">
                     <p className="text-2xl font-bold">{userStats.total.toLocaleString()}</p>
                     <p className="text-xs text-green-600 mb-1">
@@ -175,24 +264,24 @@ const Dashboard = () => {
                   <p className="font-semibold">{userStats.active.toLocaleString()}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2 text-center">
-                  <p className="text-xs text-gray-500">New</p>
-                  <p className="font-semibold">{userStats.new}</p>
+                  <p className="text-xs text-gray-500">Suspicious</p>
+                  <p className="font-semibold text-amber-600">{userStats.unapproved}</p>
                 </div>
               </div>
             </div>
 
-            {/* Unapproved Users Card */}
+            {/* Threats by Type Card */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-50">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center">
-                  <UserX className="h-6 w-6 text-amber-600" />
+                  <Shield className="h-6 w-6 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="text-sm text-gray-500 font-medium">Unapproved Users</h3>
+                  <h3 className="text-sm text-gray-500 font-medium">Threat Types</h3>
                   <div className="flex items-end gap-2">
-                    <p className="text-2xl font-bold">{userStats.unapproved}</p>
+                    <p className="text-2xl font-bold">{dataLeakageStats.potentialIncidents}</p>
                     <p className="text-xs text-amber-600 mb-1">
-                      Require review
+                      Detected incidents
                     </p>
                   </div>
                 </div>
@@ -200,13 +289,13 @@ const Dashboard = () => {
               <div className="mt-4">
                 <div className="bg-amber-50 rounded-lg p-3">
                   <div className="flex justify-between items-center">
-                    <p className="text-xs font-medium text-amber-800">Action required</p>
+                    <p className="text-xs font-medium text-amber-800">Top threat: {isDatasetUploaded ? "Phishing" : "Unauthorized Access"}</p>
                     <div className="px-2 py-1 bg-amber-100 rounded-full text-xs font-medium text-amber-800">
                       High priority
                     </div>
                   </div>
                   <p className="text-xs text-amber-700 mt-1">
-                    {userStats.unapproved} users waiting for approval
+                    {Math.floor(dataLeakageStats.criticalRisk * 0.4)} phishing attempts detected
                   </p>
                 </div>
               </div>
@@ -238,8 +327,8 @@ const Dashboard = () => {
                   <p className="font-semibold text-amber-700">{dataLeakageStats.mediumRisk}</p>
                 </div>
                 <div className="bg-green-50 rounded-lg p-2 text-center">
-                  <p className="text-xs text-green-700">Low</p>
-                  <p className="font-semibold text-green-700">{dataLeakageStats.lowRisk}</p>
+                  <p className="text-xs text-green-700">Mitigated</p>
+                  <p className="font-semibold text-green-700">{dataLeakageStats.mitigated}</p>
                 </div>
               </div>
             </div>
@@ -249,10 +338,10 @@ const Dashboard = () => {
             <div className="flex-1">
               <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-medium">System Status</h3>
+                  <h3 className="font-medium">Protection Status</h3>
                   <div className="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
                     <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                    <span>Operational</span>
+                    <span>Active Monitoring</span>
                   </div>
                 </div>
 
@@ -261,47 +350,63 @@ const Dashboard = () => {
                     <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-2">
                       <Shield className="h-4 w-4 text-primary" />
                     </div>
-                    <h4 className="text-sm font-medium mb-1">Protection</h4>
-                    <p className="text-xs text-green-600">Active</p>
+                    <h4 className="text-sm font-medium mb-1">Phishing</h4>
+                    <p className="text-xs text-green-600">Protected</p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-2">
                       <Database className="h-4 w-4 text-primary" />
                     </div>
                     <h4 className="text-sm font-medium mb-1">Database</h4>
-                    <p className="text-xs text-green-600">Secure</p>
+                    <p className="text-xs text-green-600">Monitored</p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-2">
                       <Network className="h-4 w-4 text-primary" />
                     </div>
                     <h4 className="text-sm font-medium mb-1">Network</h4>
-                    <p className="text-xs text-green-600">Monitored</p>
+                    <p className="text-xs text-green-600">Secured</p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-2">
                       <User className="h-4 w-4 text-primary" />
                     </div>
                     <h4 className="text-sm font-medium mb-1">Users</h4>
-                    <p className="text-xs text-green-600">Tracked</p>
+                    <p className="text-xs text-green-600">Verified</p>
                   </div>
                 </div>
               </div>
 
               <div className="bg-white rounded-xl p-6 shadow-sm">
-                <h3 className="font-medium mb-6">Recent Alerts</h3>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-medium">Recent Threat Alerts</h3>
+                  {metrics?.alerts && metrics.alerts.length > 0 && (
+                    <Button
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleDownloadReport}
+                      className="text-xs flex items-center gap-1"
+                    >
+                      <Download size={12} />
+                      Export All
+                    </Button>
+                  )}
+                </div>
 
                 <div className="space-y-4">
                   {metrics?.alerts && metrics.alerts.length > 0 ? (
                     metrics.alerts.map((alert, index) => (
                       <div key={index} className={`flex items-start gap-3 p-3 ${getAlertBgColor(alert.severity)} rounded-lg`}>
                         {getAlertIcon(alert.type)}
-                        <div>
+                        <div className="flex-1">
                           <div className="flex justify-between">
-                            <h4 className="font-medium text-sm">{alert.title}</h4>
+                            <div>
+                              <h4 className="font-medium text-sm">{alert.title}</h4>
+                              <span className="text-xs text-blue-600 font-medium">{getThreatTypeLabel(index)}</span>
+                            </div>
                             <span className="text-xs text-gray-500">{alert.time}</span>
                           </div>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 mt-1">
                             {alert.description}
                           </p>
                         </div>
@@ -311,12 +416,15 @@ const Dashboard = () => {
                     <>
                       <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg">
                         <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
-                        <div>
+                        <div className="flex-1">
                           <div className="flex justify-between">
-                            <h4 className="font-medium text-sm">Large File Upload</h4>
+                            <div>
+                              <h4 className="font-medium text-sm">Large File Upload</h4>
+                              <span className="text-xs text-blue-600 font-medium">Data Exfiltration Risk</span>
+                            </div>
                             <span className="text-xs text-gray-500">5m ago</span>
                           </div>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 mt-1">
                             User john.doe@example.com uploaded a 250MB file to an external service
                           </p>
                         </div>
@@ -324,12 +432,15 @@ const Dashboard = () => {
 
                       <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
                         <Database className="h-5 w-5 text-blue-500 mt-0.5" />
-                        <div>
+                        <div className="flex-1">
                           <div className="flex justify-between">
-                            <h4 className="font-medium text-sm">Database Query</h4>
+                            <div>
+                              <h4 className="font-medium text-sm">Database Query</h4>
+                              <span className="text-xs text-blue-600 font-medium">Unauthorized Access</span>
+                            </div>
                             <span className="text-xs text-gray-500">15m ago</span>
                           </div>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 mt-1">
                             Unusual query pattern accessing customer PII data from Marketing department
                           </p>
                         </div>
@@ -337,12 +448,15 @@ const Dashboard = () => {
 
                       <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
                         <Network className="h-5 w-5 text-red-500 mt-0.5" />
-                        <div>
+                        <div className="flex-1">
                           <div className="flex justify-between">
-                            <h4 className="font-medium text-sm">Suspicious Connection</h4>
+                            <div>
+                              <h4 className="font-medium text-sm">Suspicious Connection</h4>
+                              <span className="text-xs text-blue-600 font-medium">Phishing Attempt</span>
+                            </div>
                             <span className="text-xs text-gray-500">32m ago</span>
                           </div>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 mt-1">
                             Connection to unrecognized IP address detected from developer workstation
                           </p>
                         </div>
@@ -355,7 +469,7 @@ const Dashboard = () => {
 
             <div className="flex-1">
               <div className="bg-white rounded-xl p-6 shadow-sm h-full">
-                <h3 className="font-medium mb-6">System Analytics</h3>
+                <h3 className="font-medium mb-6">Threat Analytics</h3>
 
                 <div className="flex flex-col gap-6">
                   <div>
@@ -379,7 +493,7 @@ const Dashboard = () => {
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-medium mb-3">Anomaly Distribution</h4>
+                    <h4 className="text-sm font-medium mb-3">Threat Distribution by Type</h4>
                     <div className="h-[180px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>

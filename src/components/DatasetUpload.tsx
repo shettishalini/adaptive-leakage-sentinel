@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Upload, FileText, CheckCircle, XCircle } from "lucide-react";
+import { Upload, FileText, CheckCircle, XCircle, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useDataset } from "@/contexts/DatasetContext";
@@ -53,7 +53,7 @@ const DatasetUpload = () => {
       setUploadSuccess(true);
       toast({
         title: "Upload successful",
-        description: "Your CSV dataset has been analyzed successfully",
+        description: "Your CSV dataset has been analyzed for potential data leaks and threats",
       });
       
       // Scroll to dashboard after successful upload
@@ -103,10 +103,10 @@ const DatasetUpload = () => {
       <div className="container mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Upload Your CSV Dataset
+            Upload Your CSV Dataset for Threat Analysis
           </h2>
           <p className="text-gray-600">
-            Upload your CSV dataset for real-time threat analysis and protection
+            Our adaptive data leakage detection system uses continuous learning to dynamically identify and mitigate threats in real-time
           </p>
         </div>
 
@@ -121,8 +121,8 @@ const DatasetUpload = () => {
             {uploadSuccess ? (
               <div className="flex flex-col items-center">
                 <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-                <h3 className="text-xl font-semibold text-green-700">Upload Complete!</h3>
-                <p className="text-gray-600 mt-2 mb-4">Your dataset has been uploaded and analyzed</p>
+                <h3 className="text-xl font-semibold text-green-700">Threat Analysis Complete!</h3>
+                <p className="text-gray-600 mt-2 mb-4">Your dataset has been analyzed for potential data leakage threats</p>
                 <Button
                   onClick={() => setUploadSuccess(false)}
                   className="mt-2"
@@ -151,7 +151,7 @@ const DatasetUpload = () => {
                   <p className="text-sm text-gray-500 mt-2 mb-4">
                     {file
                       ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
-                      : "Only CSV files are supported"}
+                      : "Upload any CSV containing user activity, network logs, or file access data"}
                   </p>
                   {!file && (
                     <Button variant="outline" className="mt-2">
@@ -186,7 +186,7 @@ const DatasetUpload = () => {
                       disabled={uploading}
                       className="w-full"
                     >
-                      {uploading ? "Analyzing..." : "Analyze Dataset"}
+                      {uploading ? "Analyzing Threats..." : "Analyze Dataset for Threats"}
                     </Button>
                   </div>
                 )}
@@ -195,25 +195,25 @@ const DatasetUpload = () => {
           </div>
 
           <div className="mt-8 bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">CSV Dataset Requirements</h3>
+            <h3 className="text-lg font-semibold mb-4">Advanced Threat Detection System</h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-primary">1</span>
+                  <Shield className="h-3 w-3 text-primary" />
                 </div>
-                <p className="text-sm text-gray-600">Upload a properly formatted CSV file with headers in the first row</p>
+                <p className="text-sm text-gray-600">Continuously learns from new data patterns to detect emerging threats</p>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-primary">2</span>
+                  <Shield className="h-3 w-3 text-primary" />
                 </div>
-                <p className="text-sm text-gray-600">Ensure data columns are properly separated by commas</p>
+                <p className="text-sm text-gray-600">Identifies unauthorized access, phishing attempts, and suspicious user behavior</p>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-primary">3</span>
+                  <Shield className="h-3 w-3 text-primary" />
                 </div>
-                <p className="text-sm text-gray-600">For best threat analysis, include columns with user, network, or access information</p>
+                <p className="text-sm text-gray-600">Generates comprehensive reports with actionable threat mitigation recommendations</p>
               </li>
             </ul>
           </div>

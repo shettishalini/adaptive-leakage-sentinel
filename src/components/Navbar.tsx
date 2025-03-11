@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Navbar = () => {
@@ -86,15 +86,9 @@ const Navbar = () => {
             How It Works
           </a>
           <Button
-            variant="ghost"
-            className="text-sm font-medium hover:bg-green-50 hover:text-green-600"
-          >
-            Log In
-          </Button>
-          <Button
+            onClick={() => document.getElementById('dataset-upload')?.scrollIntoView({ behavior: 'smooth' })}
             className="text-sm font-medium bg-green-600 hover:bg-green-700 text-white"
             size="sm"
-            onClick={() => document.getElementById('dataset-upload')?.scrollIntoView({ behavior: 'smooth' })}
           >
             Upload Dataset
           </Button>
@@ -143,13 +137,6 @@ const Navbar = () => {
             How It Works
           </a>
           <div className="flex flex-col gap-4 mt-6">
-            <Button
-              variant="ghost"
-              className="w-full justify-center hover:bg-green-50 hover:text-green-600"
-              onClick={toggleMobileMenu}
-            >
-              Log In
-            </Button>
             <Button
               className="w-full justify-center bg-green-600 hover:bg-green-700 text-white"
               onClick={() => {
