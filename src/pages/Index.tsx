@@ -14,7 +14,9 @@ const Index = () => {
       <Navbar />
       <Hero />
       <Features />
-      <DatasetUpload />
+      <div id="dataset-upload">
+        <DatasetUpload />
+      </div>
       <Dashboard />
       <HowItWorks />
       <CallToAction />

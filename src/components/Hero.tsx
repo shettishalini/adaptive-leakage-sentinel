@@ -20,21 +20,28 @@ const Hero = () => {
         <div className="flex flex-col lg:flex-row items-center gap-12">
           <div className={`max-w-2xl ${isLoaded ? "animate-fade-in" : "opacity-0"}`}>
             <div className="inline-block px-4 py-1.5 rounded-full bg-green-50 border border-green-100 mb-6">
-              <p className="text-xs font-medium text-green-700">Adaptive Security System</p>
+              <p className="text-xs font-medium text-green-700">AI-Powered Analysis</p>
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight">
-              Adaptive Data Leakage <span className="gradient-text-green">Detection</span> System
+              Adaptive Data <span className="gradient-text-green">Analysis</span> System
             </h1>
             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
               Our AI-powered system continuously learns from new data patterns, 
-              identifying emerging threats and adapting to evolving leakage patterns 
-              in real-time to provide unmatched protection for your sensitive information.
+              identifying emerging trends and adapting to evolving patterns 
+              in real-time to provide valuable insights from your data.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button className="bg-green-600 hover:bg-green-700 text-white px-8 py-6 h-auto rounded-md shadow-md shadow-green-200">
-                Request a Demo
+              <Button 
+                className="bg-green-600 hover:bg-green-700 text-white px-8 py-6 h-auto rounded-md shadow-md shadow-green-200"
+                onClick={() => document.getElementById('dataset-upload')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Upload Dataset
               </Button>
-              <Button variant="outline" className="bg-white border-gray-200 hover:bg-gray-50 px-8 py-6 h-auto rounded-md">
+              <Button 
+                variant="outline" 
+                className="bg-white border-gray-200 hover:bg-gray-50 px-8 py-6 h-auto rounded-md"
+                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+              >
                 Learn More
               </Button>
             </div>
@@ -42,17 +49,17 @@ const Hero = () => {
             <div className="mt-12 flex items-center gap-8">
               <div className="flex flex-col items-center">
                 <h3 className="text-2xl font-bold mb-1 text-green-600">99.8%</h3>
-                <p className="text-sm text-gray-500">Detection Rate</p>
+                <p className="text-sm text-gray-500">Analysis Accuracy</p>
               </div>
               <div className="h-12 w-px bg-gray-200" />
               <div className="flex flex-col items-center">
                 <h3 className="text-2xl font-bold mb-1 text-green-600">0.1%</h3>
-                <p className="text-sm text-gray-500">False Positives</p>
+                <p className="text-sm text-gray-500">Error Rate</p>
               </div>
               <div className="h-12 w-px bg-gray-200" />
               <div className="flex flex-col items-center">
                 <h3 className="text-2xl font-bold mb-1 text-green-600">24/7</h3>
-                <p className="text-sm text-gray-500">Monitoring</p>
+                <p className="text-sm text-gray-500">Processing</p>
               </div>
             </div>
           </div>
@@ -63,36 +70,36 @@ const Hero = () => {
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex items-center gap-2">
                     <Shield className="h-5 w-5 text-green-600" />
-                    <h3 className="font-medium">Security Dashboard</h3>
+                    <h3 className="font-medium">Analysis Dashboard</h3>
                   </div>
-                  <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">Protected</span>
+                  <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">Processing</span>
                 </div>
                 <div className="space-y-4">
                   <div className="bg-white/50 p-4 rounded-lg flex items-start gap-3 border border-green-50">
                     <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-sm">Anomaly Detected</h4>
-                      <p className="text-xs text-gray-500">Large file transfer in HR department</p>
+                      <h4 className="font-medium text-sm">Pattern Detected</h4>
+                      <p className="text-xs text-gray-500">Anomaly in dataset section #12</p>
                     </div>
                   </div>
                   <div className="bg-white/50 p-4 rounded-lg flex items-start gap-3 border border-green-50">
                     <Database className="h-5 w-5 text-blue-500 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-sm">Database Access</h4>
-                      <p className="text-xs text-gray-500">Unusual query pattern detected</p>
+                      <h4 className="font-medium text-sm">Data Processing</h4>
+                      <p className="text-xs text-gray-500">Cleaning and normalization complete</p>
                     </div>
                   </div>
                   <div className="bg-white/50 p-4 rounded-lg flex items-start gap-3 border border-green-50">
                     <Network className="h-5 w-5 text-green-600 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-sm">Network Traffic</h4>
-                      <p className="text-xs text-gray-500">New connection to unrecognized IP</p>
+                      <h4 className="font-medium text-sm">Data Connections</h4>
+                      <p className="text-xs text-gray-500">Identified 3 new correlations</p>
                     </div>
                   </div>
                   <div className="bg-white/50 p-4 rounded-lg flex items-start gap-3 border border-green-50">
                     <Lock className="h-5 w-5 text-green-600 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-sm">Security Update</h4>
+                      <h4 className="font-medium text-sm">Model Update</h4>
                       <p className="text-xs text-gray-500">Model has been retrained</p>
                     </div>
                   </div>
@@ -106,7 +113,7 @@ const Hero = () => {
               <div className="absolute -top-6 -left-6 glass p-3 rounded-lg shadow-lg animate-flow border border-green-100/20">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                  <p className="text-xs font-medium">AI Monitoring Active</p>
+                  <p className="text-xs font-medium">AI Processing Active</p>
                 </div>
               </div>
               <div className="absolute -bottom-6 -right-6 glass p-3 rounded-lg shadow-lg animate-flow border border-green-100/20">

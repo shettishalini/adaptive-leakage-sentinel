@@ -94,8 +94,9 @@ const Navbar = () => {
           <Button
             className="text-sm font-medium bg-green-600 hover:bg-green-700 text-white"
             size="sm"
+            onClick={() => document.getElementById('dataset-upload')?.scrollIntoView({ behavior: 'smooth' })}
           >
-            Request Demo
+            Upload Dataset
           </Button>
         </nav>
 
@@ -151,9 +152,12 @@ const Navbar = () => {
             </Button>
             <Button
               className="w-full justify-center bg-green-600 hover:bg-green-700 text-white"
-              onClick={toggleMobileMenu}
+              onClick={() => {
+                document.getElementById('dataset-upload')?.scrollIntoView({ behavior: 'smooth' });
+                toggleMobileMenu();
+              }}
             >
-              Request Demo
+              Upload Dataset
             </Button>
           </div>
         </nav>
