@@ -3,12 +3,14 @@ import { useState } from "react";
 import { Upload, FileText, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useDataset, DatasetMetrics } from "@/contexts/DatasetContext";
 
 const DatasetUpload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const { toast } = useToast();
+  const { setIsDatasetUploaded, setMetrics } = useDataset();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -16,6 +18,86 @@ const DatasetUpload = () => {
       setFile(selectedFile);
       setUploadSuccess(false);
     }
+  };
+
+  // Helper function to generate random data
+  const generateRandomMetrics = (): DatasetMetrics => {
+    // Generate random user stats
+    const totalUsers = Math.floor(Math.random() * 2000) + 800;
+    const activeUsers = Math.floor(totalUsers * (0.7 + Math.random() * 0.2));
+    const newUsers = Math.floor(Math.random() * 50) + 10;
+    const unapprovedUsers = Math.floor(Math.random() * 30) + 5;
+
+    // Generate random leakage stats
+    const incidents = Math.floor(Math.random() * 20) + 5;
+    const criticalRisk = Math.floor(incidents * (0.1 + Math.random() * 0.2));
+    const mediumRisk = Math.floor(incidents * (0.3 + Math.random() * 0.3));
+    const lowRisk = incidents - criticalRisk - mediumRisk;
+    const mitigated = Math.floor(incidents * (0.5 + Math.random() * 0.4));
+
+    // Generate network data
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const networkData = days.map(day => ({
+      name: day,
+      Traffic: Math.floor(Math.random() * 200) + 50,
+      Alerts: Math.floor(Math.random() * 30) + 1
+    }));
+
+    // Generate anomaly distribution
+    const anomalyTypes = ['Network', 'File Access', 'User Behavior', 'Database'];
+    const anomalyDistribution = anomalyTypes.map(type => ({
+      name: type,
+      value: Math.floor(Math.random() * 50) + 5
+    }));
+
+    // Generate alerts
+    const alertTypes = [
+      { type: 'file', title: 'Large File Upload', description: 'User uploaded a large file to an external service', severity: 'medium' },
+      { type: 'database', title: 'Database Query', description: 'Unusual query pattern accessing customer PII data', severity: 'medium' },
+      { type: 'network', title: 'Suspicious Connection', description: 'Connection to unrecognized IP address detected', severity: 'high' },
+      { type: 'user', title: 'Multiple Login Attempts', description: 'Multiple failed login attempts from different locations', severity: 'high' },
+      { type: 'file', title: 'Sensitive Data Access', description: 'Unauthorized access to sensitive files', severity: 'high' },
+      { type: 'user', title: 'Unusual Activity Hours', description: 'User activity detected outside normal working hours', severity: 'low' }
+    ];
+    
+    const alerts = [];
+    const usedAlerts = new Set();
+    
+    // Pick 3-5 random alerts
+    const numAlerts = Math.floor(Math.random() * 3) + 3;
+    while (alerts.length < numAlerts && usedAlerts.size < alertTypes.length) {
+      const randomIndex = Math.floor(Math.random() * alertTypes.length);
+      if (!usedAlerts.has(randomIndex)) {
+        usedAlerts.add(randomIndex);
+        const alert = alertTypes[randomIndex];
+        const minutesAgo = Math.floor(Math.random() * 60) + 1;
+        alerts.push({
+          ...alert,
+          time: `${minutesAgo}m ago`,
+          severity: alert.severity as "low" | "medium" | "high"
+        });
+      }
+    }
+
+    return {
+      userStats: {
+        total: totalUsers,
+        active: activeUsers,
+        new: newUsers,
+        unapproved: unapprovedUsers
+      },
+      dataLeakageStats: {
+        potentialIncidents: incidents,
+        criticalRisk,
+        mediumRisk,
+        lowRisk,
+        mitigated
+      },
+      networkData,
+      anomalyDistribution,
+      alerts,
+      lastUpdated: new Date()
+    };
   };
 
   const handleUpload = () => {
@@ -30,16 +112,31 @@ const DatasetUpload = () => {
 
     setUploading(true);
     
-    // Simulate upload process
+    // Simulate upload process and data analysis
     setTimeout(() => {
+      // Generate mock metrics
+      const metrics = generateRandomMetrics();
+      
+      // Update context with the metrics
+      setMetrics(metrics);
+      setIsDatasetUploaded(true);
+      
       setUploading(false);
       setUploadSuccess(true);
-      setFile(null);
       
       toast({
         title: "Upload successful",
-        description: "Your dataset has been uploaded successfully",
+        description: "Your dataset has been analyzed successfully",
       });
+      
+      // Scroll to dashboard after successful upload
+      setTimeout(() => {
+        const dashboardElement = document.getElementById('dashboard');
+        if (dashboardElement) {
+          dashboardElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 1000);
+      
     }, 2000);
   };
 

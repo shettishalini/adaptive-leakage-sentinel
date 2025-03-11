@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Line, Bar, Pie } from "recharts";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import {
   Shield,
   AlertTriangle,
@@ -12,10 +12,15 @@ import {
   UserX,
   FileWarning,
   Search,
+  Clock,
+  File,
 } from "lucide-react";
+import { useDataset } from "@/contexts/DatasetContext";
+import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const { isDatasetUploaded, metrics } = useDataset();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,7 +39,8 @@ const Dashboard = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const networkData = [
+  // Default data when no dataset is uploaded
+  const defaultNetworkData = [
     { name: "Mon", Traffic: 120, Alerts: 20 },
     { name: "Tue", Traffic: 180, Alerts: 10 },
     { name: "Wed", Traffic: 200, Alerts: 15 },
@@ -44,26 +50,56 @@ const Dashboard = () => {
     { name: "Sun", Traffic: 75, Alerts: 2 },
   ];
 
-  const anomalyDistribution = [
+  const defaultAnomalyDistribution = [
     { name: "Network", value: 45 },
     { name: "File Access", value: 30 },
     { name: "User Behavior", value: 15 },
     { name: "Database", value: 10 },
   ];
 
-  const userStats = {
+  const defaultUserStats = {
     total: 1245,
     active: 987,
     new: 34,
     unapproved: 18
   };
 
-  const dataLeakageStats = {
+  const defaultDataLeakageStats = {
     potentialIncidents: 12,
     criticalRisk: 3,
     mediumRisk: 6,
     lowRisk: 3,
     mitigated: 8
+  };
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+  // Use uploaded dataset metrics or defaults
+  const networkData = metrics?.networkData || defaultNetworkData;
+  const anomalyDistribution = metrics?.anomalyDistribution || defaultAnomalyDistribution;
+  const userStats = metrics?.userStats || defaultUserStats;
+  const dataLeakageStats = metrics?.dataLeakageStats || defaultDataLeakageStats;
+  const lastUpdated = metrics?.lastUpdated;
+
+  // Get alert icon based on type
+  const getAlertIcon = (type: string) => {
+    switch (type) {
+      case 'network': return <Network className="h-5 w-5 text-red-500 mt-0.5" />;
+      case 'database': return <Database className="h-5 w-5 text-blue-500 mt-0.5" />;
+      case 'file': return <File className="h-5 w-5 text-amber-500 mt-0.5" />;
+      case 'user': return <User className="h-5 w-5 text-purple-500 mt-0.5" />;
+      default: return <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />;
+    }
+  };
+
+  // Get background color based on severity
+  const getAlertBgColor = (severity: string) => {
+    switch (severity) {
+      case 'high': return 'bg-red-50';
+      case 'medium': return 'bg-amber-50';
+      case 'low': return 'bg-blue-50';
+      default: return 'bg-gray-50';
+    }
   };
 
   return (
@@ -74,7 +110,7 @@ const Dashboard = () => {
       <div className="absolute top-0 right-0 w-2/3 h-full bg-blue-50 opacity-50 transform -skew-x-12" />
 
       <div className="container mx-auto px-6 relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-8">
           <div className="inline-block px-4 py-1 rounded-full bg-blue-50 border border-blue-100 mb-4">
             <p className="text-xs font-medium text-blue-700">Intelligent Monitoring</p>
           </div>
@@ -87,6 +123,26 @@ const Dashboard = () => {
           </p>
         </div>
 
+        {/* Dataset upload status */}
+        {isDatasetUploaded && metrics?.lastUpdated && (
+          <div className="mb-8 bg-green-50 p-4 rounded-xl border border-green-100 max-w-3xl mx-auto">
+            <div className="flex items-center gap-3">
+              <div className="bg-green-100 p-2 rounded-full">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-green-800">Dataset Successfully Analyzed</h3>
+                <p className="text-sm text-green-700">
+                  Dashboard updated with real-time insights from your data.
+                  <span className="ml-2 text-gray-500 flex items-center gap-1 inline-flex">
+                    <Clock className="h-3 w-3" /> Last updated: {lastUpdated.toLocaleTimeString()}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div
           className={`glass rounded-2xl border border-gray-100 shadow-xl p-6 md:p-8 transition-all duration-1000 ${
             isVisible
@@ -94,7 +150,7 @@ const Dashboard = () => {
               : "opacity-0 transform translate-y-20"
           }`}
         >
-          {/* New Header Cards Section */}
+          {/* Header Cards Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Number of Users Card */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-50">
@@ -235,44 +291,63 @@ const Dashboard = () => {
                 <h3 className="font-medium mb-6">Recent Alerts</h3>
 
                 <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg">
-                    <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
-                    <div>
-                      <div className="flex justify-between">
-                        <h4 className="font-medium text-sm">Large File Upload</h4>
-                        <span className="text-xs text-gray-500">5m ago</span>
+                  {metrics?.alerts && metrics.alerts.length > 0 ? (
+                    metrics.alerts.map((alert, index) => (
+                      <div key={index} className={`flex items-start gap-3 p-3 ${getAlertBgColor(alert.severity)} rounded-lg`}>
+                        {getAlertIcon(alert.type)}
+                        <div>
+                          <div className="flex justify-between">
+                            <h4 className="font-medium text-sm">{alert.title}</h4>
+                            <span className="text-xs text-gray-500">{alert.time}</span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            {alert.description}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        User john.doe@example.com uploaded a 250MB file to an external service
-                      </p>
-                    </div>
-                  </div>
+                    ))
+                  ) : (
+                    <>
+                      <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg">
+                        <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+                        <div>
+                          <div className="flex justify-between">
+                            <h4 className="font-medium text-sm">Large File Upload</h4>
+                            <span className="text-xs text-gray-500">5m ago</span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            User john.doe@example.com uploaded a 250MB file to an external service
+                          </p>
+                        </div>
+                      </div>
 
-                  <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                    <Database className="h-5 w-5 text-blue-500 mt-0.5" />
-                    <div>
-                      <div className="flex justify-between">
-                        <h4 className="font-medium text-sm">Database Query</h4>
-                        <span className="text-xs text-gray-500">15m ago</span>
+                      <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                        <Database className="h-5 w-5 text-blue-500 mt-0.5" />
+                        <div>
+                          <div className="flex justify-between">
+                            <h4 className="font-medium text-sm">Database Query</h4>
+                            <span className="text-xs text-gray-500">15m ago</span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Unusual query pattern accessing customer PII data from Marketing department
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        Unusual query pattern accessing customer PII data from Marketing department
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
-                    <Network className="h-5 w-5 text-red-500 mt-0.5" />
-                    <div>
-                      <div className="flex justify-between">
-                        <h4 className="font-medium text-sm">Suspicious Connection</h4>
-                        <span className="text-xs text-gray-500">32m ago</span>
+                      <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
+                        <Network className="h-5 w-5 text-red-500 mt-0.5" />
+                        <div>
+                          <div className="flex justify-between">
+                            <h4 className="font-medium text-sm">Suspicious Connection</h4>
+                            <span className="text-xs text-gray-500">32m ago</span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Connection to unrecognized IP address detected from developer workstation
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        Connection to unrecognized IP address detected from developer workstation
-                      </p>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -285,20 +360,46 @@ const Dashboard = () => {
                   <div>
                     <h4 className="text-sm font-medium mb-3">Network Traffic & Alerts</h4>
                     <div className="h-[180px] w-full">
-                      {/* This is a placeholder for the chart that would be rendered by recharts */}
-                      <div className="w-full h-full bg-gray-50 rounded-lg flex items-center justify-center">
-                        <p className="text-sm text-gray-500">Network Traffic Chart</p>
-                      </div>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={networkData}
+                          margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line type="monotone" dataKey="Traffic" stroke="#8884d8" activeDot={{ r: 8 }} />
+                          <Line type="monotone" dataKey="Alerts" stroke="#ff5555" />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
 
                   <div>
                     <h4 className="text-sm font-medium mb-3">Anomaly Distribution</h4>
                     <div className="h-[180px] w-full">
-                      {/* This is a placeholder for the chart that would be rendered by recharts */}
-                      <div className="w-full h-full bg-gray-50 rounded-lg flex items-center justify-center">
-                        <p className="text-sm text-gray-500">Anomaly Distribution Chart</p>
-                      </div>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={anomalyDistribution}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={45}
+                            outerRadius={70}
+                            fill="#8884d8"
+                            paddingAngle={5}
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {anomalyDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
 
@@ -306,15 +407,23 @@ const Dashboard = () => {
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="text-sm font-medium mb-2">Threats Detected</h4>
                       <div className="flex items-end gap-2">
-                        <p className="text-2xl font-bold">37</p>
+                        <p className="text-2xl font-bold">
+                          {isDatasetUploaded 
+                            ? dataLeakageStats.potentialIncidents + dataLeakageStats.mitigated 
+                            : 37}
+                        </p>
                         <p className="text-xs text-red-500">+12% vs prev week</p>
                       </div>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="text-sm font-medium mb-2">Threats Mitigated</h4>
                       <div className="flex items-end gap-2">
-                        <p className="text-2xl font-bold">35</p>
-                        <p className="text-xs text-green-500">94.5% success rate</p>
+                        <p className="text-2xl font-bold">{dataLeakageStats.mitigated || 35}</p>
+                        <p className="text-xs text-green-500">
+                          {isDatasetUploaded
+                            ? `${Math.round((dataLeakageStats.mitigated / (dataLeakageStats.potentialIncidents + dataLeakageStats.mitigated)) * 100)}% success rate`
+                            : '94.5% success rate'}
+                        </p>
                       </div>
                     </div>
                   </div>
