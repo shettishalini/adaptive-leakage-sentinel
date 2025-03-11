@@ -14,6 +14,7 @@ import {
   Search,
   Clock,
   File,
+  CheckCircle,
 } from "lucide-react";
 import { useDataset } from "@/contexts/DatasetContext";
 import { Button } from "@/components/ui/button";
