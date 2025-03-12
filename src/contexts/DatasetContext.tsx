@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { adaptiveDetector } from "@/utils/adaptiveDataLeakageDetector";
 
 export interface DatasetMetrics {
   userStats: {
@@ -33,6 +34,11 @@ export interface DatasetMetrics {
   }>;
   lastUpdated: Date | null;
   csvData: string[][] | null;
+  threatTypes: Record<string, number>;
+  unauthorizedUsers: string[];
+  phishingAttempts: string[];
+  dataSensitivity: Record<string, string>;
+  report: string | null;
 }
 
 interface DatasetContextProps {
@@ -41,6 +47,7 @@ interface DatasetContextProps {
   metrics: DatasetMetrics | null;
   setMetrics: (metrics: DatasetMetrics) => void;
   processCSVFile: (file: File) => Promise<DatasetMetrics>;
+  generateReport: () => string | null;
 }
 
 const initialMetrics: DatasetMetrics = {
@@ -61,7 +68,12 @@ const initialMetrics: DatasetMetrics = {
   anomalyDistribution: [],
   alerts: [],
   lastUpdated: null,
-  csvData: null
+  csvData: null,
+  threatTypes: {},
+  unauthorizedUsers: [],
+  phishingAttempts: [],
+  dataSensitivity: {},
+  report: null
 };
 
 const DatasetContext = createContext<DatasetContextProps | undefined>(undefined);
@@ -70,7 +82,19 @@ export function DatasetProvider({ children }: { children: ReactNode }) {
   const [isDatasetUploaded, setIsDatasetUploaded] = useState(false);
   const [metrics, setMetrics] = useState<DatasetMetrics | null>(null);
 
-  // Process CSV file and generate metrics
+  // Generate report from processed data
+  const generateReport = (): string | null => {
+    if (!metrics?.csvData) return null;
+    
+    const report = adaptiveDetector.generateReport(metrics.csvData);
+    
+    // Update metrics with report
+    setMetrics(prev => prev ? { ...prev, report } : null);
+    
+    return report;
+  };
+
+  // Process CSV file and generate metrics using our adaptive detector
   const processCSVFile = async (file: File): Promise<DatasetMetrics> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -94,8 +118,44 @@ export function DatasetProvider({ children }: { children: ReactNode }) {
           console.log("CSV Headers:", headers);
           console.log("CSV Data sample:", data.slice(0, 3));
           
-          // Generate metrics based on CSV data analysis
-          const generatedMetrics = analyzeCSVData(headers, data);
+          // Process with our adaptive detector
+          const detectorResults = adaptiveDetector.processData([headers, ...data]);
+          
+          // Get threat count from results
+          const totalThreats = detectorResults.predictions.filter(p => p === 1).length;
+          
+          // Generate metrics based on detector results
+          const generatedMetrics: DatasetMetrics = {
+            userStats: {
+              total: data.length,
+              active: Math.floor(data.length * 0.8),
+              new: Math.floor(data.length * 0.15),
+              unapproved: detectorResults.unauthorizedUsers.length
+            },
+            dataLeakageStats: {
+              potentialIncidents: totalThreats,
+              criticalRisk: Math.floor(totalThreats * 0.3),
+              mediumRisk: Math.floor(totalThreats * 0.5),
+              lowRisk: totalThreats - Math.floor(totalThreats * 0.3) - Math.floor(totalThreats * 0.5),
+              mitigated: Math.floor(totalThreats * 0.4)
+            },
+            networkData: generateNetworkData(data),
+            anomalyDistribution: [
+              { name: 'Unauthorized Access', value: detectorResults.threatTypes["Unauthorized Access"] || 0 },
+              { name: 'Phishing', value: detectorResults.threatTypes["Phishing Attempt"] || 0 },
+              { name: 'Data Exposure', value: detectorResults.threatTypes["Sensitive Data Exposure"] || 0 },
+              { name: 'Data Exfiltration', value: detectorResults.threatTypes["Data Exfiltration"] || 0 }
+            ],
+            alerts: generateAlerts(detectorResults),
+            lastUpdated: new Date(),
+            csvData: [headers, ...data],
+            threatTypes: detectorResults.threatTypes,
+            unauthorizedUsers: detectorResults.unauthorizedUsers,
+            phishingAttempts: detectorResults.phishingAttempts,
+            dataSensitivity: detectorResults.dataSensitivity,
+            report: null // Will be generated on download
+          };
+          
           resolve(generatedMetrics);
         } catch (error) {
           console.error("Error processing CSV:", error);
@@ -109,98 +169,6 @@ export function DatasetProvider({ children }: { children: ReactNode }) {
       
       reader.readAsText(file);
     });
-  };
-
-  // Analyze CSV data and generate threat metrics
-  const analyzeCSVData = (headers: string[], data: string[][]): DatasetMetrics => {
-    console.log("Analyzing CSV data with headers:", headers);
-    
-    // CSV data analysis logic:
-    // 1. Clean data by removing empty rows
-    const cleanData = data.filter(row => row.length > 1 && row.some(cell => cell.length > 0));
-    
-    // 2. Extract user statistics (simulated, but would be derived from actual CSV data)
-    const totalUsers = cleanData.length;
-    const activeUsers = Math.floor(totalUsers * 0.75);
-    const newUsers = Math.floor(totalUsers * 0.15);
-    const unapprovedUsers = Math.floor(totalUsers * 0.05);
-    
-    // 3. Identify potential data leakage threats
-    const incidents = identifyThreats(headers, cleanData);
-    const criticalRisk = Math.floor(incidents * 0.25);
-    const mediumRisk = Math.floor(incidents * 0.45);
-    const lowRisk = incidents - criticalRisk - mediumRisk;
-    const mitigated = Math.floor(incidents * 0.6);
-    
-    // 4. Generate network data
-    const networkData = generateNetworkData(cleanData);
-    
-    // 5. Generate anomaly distribution
-    const anomalyDistribution = generateAnomalyDistribution(cleanData);
-    
-    // 6. Generate alerts
-    const alerts = generateAlerts(cleanData, headers);
-    
-    return {
-      userStats: {
-        total: totalUsers,
-        active: activeUsers,
-        new: newUsers,
-        unapproved: unapprovedUsers
-      },
-      dataLeakageStats: {
-        potentialIncidents: incidents,
-        criticalRisk,
-        mediumRisk,
-        lowRisk,
-        mitigated
-      },
-      networkData,
-      anomalyDistribution,
-      alerts,
-      lastUpdated: new Date(),
-      csvData: cleanData
-    };
-  };
-
-  // Identify threats from CSV data
-  const identifyThreats = (headers: string[], data: string[][]): number => {
-    // Count rows with potential threat indicators
-    let threatCount = 0;
-    
-    // Check for sensitive columns that might indicate threats
-    const sensitiveHeaders = headers.map(header => 
-      header.toLowerCase().includes('password') ||
-      header.toLowerCase().includes('credit') ||
-      header.toLowerCase().includes('ssn') ||
-      header.toLowerCase().includes('secure') ||
-      header.toLowerCase().includes('access')
-    );
-    
-    // Count rows with potential threats
-    data.forEach(row => {
-      // Check for anomalies in the row
-      const hasAnomaly = row.some((cell, index) => {
-        // If this is a sensitive column, check for potential issues
-        if (sensitiveHeaders[index]) {
-          return cell.length > 0; // Any data in sensitive columns could be a threat
-        }
-        // Look for suspicious patterns in other cells
-        return (
-          cell.includes('http:') || // Insecure URLs
-          cell.includes('password') ||
-          cell.includes('admin') ||
-          /\d{16}/.test(cell) // Potential credit card numbers
-        );
-      });
-      
-      if (hasAnomaly) {
-        threatCount++;
-      }
-    });
-    
-    // Ensure we have at least some threats for demonstration
-    return Math.max(5, threatCount);
   };
 
   // Generate network data from CSV
@@ -227,27 +195,8 @@ export function DatasetProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  // Generate anomaly distribution from CSV
-  const generateAnomalyDistribution = (data: string[][]): Array<{ name: string; value: number }> => {
-    const anomalyTypes = ['Network', 'File Access', 'User Behavior', 'Database'];
-    const dataSize = data.length;
-    
-    // Base values on data size with some randomness
-    const networkValue = Math.floor(dataSize * 0.15 * (0.7 + Math.random() * 0.6));
-    const fileValue = Math.floor(dataSize * 0.1 * (0.7 + Math.random() * 0.6));
-    const userValue = Math.floor(dataSize * 0.08 * (0.7 + Math.random() * 0.6));
-    const dbValue = Math.floor(dataSize * 0.05 * (0.7 + Math.random() * 0.6));
-    
-    return [
-      { name: anomalyTypes[0], value: networkValue },
-      { name: anomalyTypes[1], value: fileValue },
-      { name: anomalyTypes[2], value: userValue },
-      { name: anomalyTypes[3], value: dbValue }
-    ];
-  };
-
-  // Generate alerts from CSV data
-  const generateAlerts = (data: string[][], headers: string[]): Array<{
+  // Generate alerts from detector results
+  const generateAlerts = (detectorResults: any): Array<{
     type: string;
     title: string;
     description: string;
@@ -258,64 +207,85 @@ export function DatasetProvider({ children }: { children: ReactNode }) {
     const alertTypes = ['network', 'database', 'file', 'user'];
     const severities: ("low" | "medium" | "high")[] = ['low', 'medium', 'high'];
     
-    // Find indices of sensitive columns
-    const sensitiveColumnIndices = headers.map((header, index) => {
-      const headerLower = header.toLowerCase();
-      if (
-        headerLower.includes('password') ||
-        headerLower.includes('credit') ||
-        headerLower.includes('ssn') ||
-        headerLower.includes('secure') ||
-        headerLower.includes('access') ||
-        headerLower.includes('email') ||
-        headerLower.includes('ip')
-      ) {
-        return index;
+    // Create alerts based on threat types
+    Object.entries(detectorResults.threatTypes).forEach(([threatType, count]) => {
+      if (Number(count) > 0) {
+        const formattedType = alertTypes[Math.floor(Math.random() * alertTypes.length)];
+        const formattedSeverity = threatType.includes('Unauthorized') || threatType.includes('Phishing') 
+          ? 'high' 
+          : (threatType.includes('Sensitive') ? 'medium' : 'low');
+          
+        const minutesAgo = Math.floor(Math.random() * 60) + 1;
+        
+        alerts.push({
+          type: formattedType,
+          title: generateAlertTitle(threatType),
+          description: generateAlertDescription(threatType),
+          time: `${minutesAgo}m ago`,
+          severity: formattedSeverity
+        });
       }
-      return -1;
-    }).filter(index => index >= 0);
+    });
     
-    // Generate 3-5 alerts based on actual CSV data
-    const numAlerts = Math.min(5, Math.max(3, Math.floor(data.length / 100)));
-    
-    for (let i = 0; i < numAlerts; i++) {
-      // Pick a random sensitive column if available
-      let description = "Unusual pattern detected in dataset";
-      
-      if (sensitiveColumnIndices.length > 0) {
-        const columnIndex = sensitiveColumnIndices[Math.floor(Math.random() * sensitiveColumnIndices.length)];
-        description = `Unusual pattern detected in ${headers[columnIndex]} column`;
-      }
-      
-      // Generate a random alert time (1-60 minutes ago)
-      const minutesAgo = Math.floor(Math.random() * 60) + 1;
-      
+    // Add alerts for unauthorized users
+    detectorResults.unauthorizedUsers.slice(0, 3).forEach((user: string) => {
       alerts.push({
-        type: alertTypes[Math.floor(Math.random() * alertTypes.length)],
-        title: generateAlertTitle(),
-        description,
-        time: `${minutesAgo}m ago`,
-        severity: severities[Math.floor(Math.random() * severities.length)]
+        type: 'user',
+        title: 'Unauthorized Access Attempt',
+        description: `User "${user}" attempted to access restricted resources`,
+        time: `${Math.floor(Math.random() * 30) + 1}m ago`,
+        severity: 'high'
       });
-    }
+    });
+    
+    // Add alerts for phishing attempts
+    detectorResults.phishingAttempts.slice(0, 3).forEach((url: string) => {
+      alerts.push({
+        type: 'network',
+        title: 'Phishing URL Detected',
+        description: `Suspicious URL detected: ${url.substring(0, 30)}...`,
+        time: `${Math.floor(Math.random() * 45) + 1}m ago`,
+        severity: 'high'
+      });
+    });
     
     return alerts;
   };
 
   // Generate alert titles
-  const generateAlertTitle = (): string => {
-    const titles = [
-      "Suspicious Access Pattern",
-      "Large Data Transfer",
-      "Unusual Login Location",
-      "Multiple Failed Attempts",
-      "Data Exfiltration Risk",
-      "Sensitive Data Access",
-      "Unusual Query Pattern",
-      "Authentication Anomaly"
-    ];
-    
-    return titles[Math.floor(Math.random() * titles.length)];
+  const generateAlertTitle = (threatType: string): string => {
+    switch (threatType) {
+      case "Unauthorized Access":
+        return "Unauthorized Access Detected";
+      case "Phishing Attempt":
+        return "Phishing Attempt Identified";
+      case "Sensitive Data Exposure":
+        return "Sensitive Data Exposure Risk";
+      case "Data Exfiltration":
+        return "Potential Data Exfiltration";
+      case "Suspicious File Access":
+        return "Suspicious File Access Pattern";
+      default:
+        return "Security Alert Detected";
+    }
+  };
+  
+  // Generate alert descriptions
+  const generateAlertDescription = (threatType: string): string => {
+    switch (threatType) {
+      case "Unauthorized Access":
+        return "Unusual access pattern detected from unverified source";
+      case "Phishing Attempt":
+        return "Suspicious URL or email pattern identified in communications";
+      case "Sensitive Data Exposure":
+        return "Potential exposure of sensitive information detected";
+      case "Data Exfiltration":
+        return "Unusual data transfer pattern suggests possible exfiltration";
+      case "Suspicious File Access":
+        return "Abnormal file access pattern detected in system";
+      default:
+        return "Unusual pattern detected in dataset";
+    }
   };
 
   return (
@@ -324,7 +294,8 @@ export function DatasetProvider({ children }: { children: ReactNode }) {
       setIsDatasetUploaded, 
       metrics, 
       setMetrics,
-      processCSVFile
+      processCSVFile,
+      generateReport
     }}>
       {children}
     </DatasetContext.Provider>

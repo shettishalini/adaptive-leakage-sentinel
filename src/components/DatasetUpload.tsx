@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Upload, FileText, CheckCircle, XCircle, Shield } from "lucide-react";
+import { Upload, FileText, CheckCircle, XCircle, Shield, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useDataset } from "@/contexts/DatasetContext";
@@ -10,7 +10,7 @@ const DatasetUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const { toast } = useToast();
-  const { setIsDatasetUploaded, setMetrics, processCSVFile } = useDataset();
+  const { setIsDatasetUploaded, setMetrics, processCSVFile, metrics, generateReport } = useDataset();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -75,6 +75,46 @@ const DatasetUpload = () => {
     }
   };
 
+  const handleDownloadReport = () => {
+    if (!metrics) {
+      toast({
+        title: "No data available",
+        description: "Please upload and analyze a dataset first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Generate report
+    const report = generateReport();
+    if (!report) {
+      toast({
+        title: "Report generation failed",
+        description: "Unable to generate a threat analysis report",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Create download
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'DataLeakageReport.txt';
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    toast({
+      title: "Report downloaded",
+      description: "Threat analysis report has been saved to your device",
+    });
+  };
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
@@ -99,7 +139,7 @@ const DatasetUpload = () => {
   };
 
   return (
-    <section className="py-16 bg-white relative">
+    <section className="py-16 bg-white relative" id="dataset-upload">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
@@ -123,13 +163,21 @@ const DatasetUpload = () => {
                 <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
                 <h3 className="text-xl font-semibold text-green-700">Threat Analysis Complete!</h3>
                 <p className="text-gray-600 mt-2 mb-4">Your dataset has been analyzed for potential data leakage threats</p>
-                <Button
-                  onClick={() => setUploadSuccess(false)}
-                  className="mt-2"
-                  variant="outline"
-                >
-                  Upload Another File
-                </Button>
+                <div className="flex gap-4 mt-2">
+                  <Button
+                    onClick={handleDownloadReport}
+                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                  >
+                    <Download size={16} />
+                    Download Report
+                  </Button>
+                  <Button
+                    onClick={() => setUploadSuccess(false)}
+                    variant="outline"
+                  >
+                    Upload Another File
+                  </Button>
+                </div>
               </div>
             ) : (
               <>
@@ -201,13 +249,13 @@ const DatasetUpload = () => {
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Shield className="h-3 w-3 text-primary" />
                 </div>
-                <p className="text-sm text-gray-600">Continuously learns from new data patterns to detect emerging threats</p>
+                <p className="text-sm text-gray-600">Identifies unauthorized access, phishing attempts and data exfiltration</p>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Shield className="h-3 w-3 text-primary" />
                 </div>
-                <p className="text-sm text-gray-600">Identifies unauthorized access, phishing attempts, and suspicious user behavior</p>
+                <p className="text-sm text-gray-600">Uses AI to continually learn from new data patterns for improved threat detection</p>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
