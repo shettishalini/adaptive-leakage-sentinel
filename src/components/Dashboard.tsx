@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import {
@@ -100,8 +99,9 @@ const Dashboard = () => {
         });
       }
       
-      // Fix the TypeScript error by using a type assertion for lastAutoTable
-      let currentY = (pdf as any).lastAutoTable?.finalY || 85;
+      const autoTableOutput = autoTable as any;
+      let currentY = autoTableOutput.previous ? autoTableOutput.previous.finalY : 85;
+      
       currentY += 15;
       
       if (metrics.unauthorizedUsers && metrics.unauthorizedUsers.length > 0) {
@@ -643,3 +643,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

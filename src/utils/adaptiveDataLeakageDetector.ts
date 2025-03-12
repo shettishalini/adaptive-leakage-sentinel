@@ -198,7 +198,8 @@ class AdaptiveDetector {
     report += "----------------\n";
     Object.entries(results.threatTypes).forEach(([type, count]) => {
       if (count > 0) {
-        report += `${type}: ${count}\n`;
+        // Fix: Ensure count is converted to string when concatenating
+        report += `${type}: ${String(count)}\n`;
       }
     });
     report += "\n";
