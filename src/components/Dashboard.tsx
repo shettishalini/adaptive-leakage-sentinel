@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import {
@@ -20,10 +19,12 @@ import {
 import { useDataset } from "@/contexts/DatasetContext";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const Dashboard = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const { isDatasetUploaded, metrics } = useDataset();
+  const { isDatasetUploaded, metrics, generateReport } = useDataset();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,7 +44,6 @@ const Dashboard = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Handle downloading the security report
   const handleDownloadReport = () => {
     if (!isDatasetUploaded || !metrics) {
       toast({
@@ -55,53 +55,151 @@ const Dashboard = () => {
     }
 
     try {
-      // Create a JSON object with all the security metrics
-      const reportData = {
-        generatedAt: new Date().toISOString(),
-        reportTitle: "Data Leakage & Threat Analysis Report",
-        userMetrics: metrics.userStats,
-        threatMetrics: metrics.dataLeakageStats,
-        networkActivity: metrics.networkData,
-        anomalies: metrics.anomalyDistribution,
-        alertsDetected: metrics.alerts,
-        threatSummary: {
-          phishingAttempts: Math.floor(metrics.dataLeakageStats.criticalRisk * 0.4),
-          unauthorizedAccess: Math.floor(metrics.dataLeakageStats.criticalRisk * 0.3),
-          suspiciousUserBehavior: Math.floor(metrics.dataLeakageStats.mediumRisk * 0.5),
-          dataExfiltration: Math.floor(metrics.dataLeakageStats.criticalRisk * 0.3),
-          recommendedActions: [
-            "Enforce multi-factor authentication for all users",
-            "Review and restrict access permissions for sensitive data",
-            "Implement additional monitoring for high-risk users",
-            "Update security training for all employees",
-          ]
+      const reportText = generateReport();
+      
+      if (!reportText) {
+        throw new Error("Could not generate report");
+      }
+      
+      const pdf = new jsPDF();
+      
+      pdf.setFontSize(20);
+      pdf.setTextColor(33, 33, 33);
+      pdf.text("Adaptive Data Leakage Detection Report", 20, 20);
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`Generated on: ${new Date().toLocaleString()}`, 20, 30);
+      
+      pdf.setFontSize(16);
+      pdf.setTextColor(33, 33, 33);
+      pdf.text("Summary", 20, 40);
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(60, 60, 60);
+      pdf.text(`Total records analyzed: ${metrics.userStats.total}`, 25, 50);
+      pdf.text(`Potential threats detected: ${metrics.dataLeakageStats.potentialIncidents}`, 25, 58);
+      
+      const threatPercentage = ((metrics.dataLeakageStats.potentialIncidents / metrics.userStats.total) * 100).toFixed(2);
+      pdf.text(`Percentage of data with threats: ${threatPercentage}%`, 25, 66);
+      
+      pdf.setFontSize(16);
+      pdf.setTextColor(33, 33, 33);
+      pdf.text("Threat Breakdown", 20, 80);
+      
+      const threatTypeData = Object.entries(metrics.threatTypes).map(([type, count]) => [type, count.toString()]);
+      
+      if (threatTypeData.length > 0) {
+        autoTable(pdf, {
+          startY: 85,
+          head: [['Threat Type', 'Count']],
+          body: threatTypeData,
+          theme: 'striped',
+          headStyles: { fillColor: [66, 133, 244] }
+        });
+      }
+      
+      let currentY = pdf.lastAutoTable?.finalY || 85;
+      currentY += 15;
+      
+      if (metrics.unauthorizedUsers && metrics.unauthorizedUsers.length > 0) {
+        pdf.setFontSize(16);
+        pdf.setTextColor(33, 33, 33);
+        pdf.text("Unauthorized Access Attempts", 20, currentY);
+        
+        currentY += 10;
+        pdf.setFontSize(12);
+        pdf.setTextColor(60, 60, 60);
+        
+        const usersToDisplay = metrics.unauthorizedUsers.slice(0, 10);
+        usersToDisplay.forEach((user, index) => {
+          pdf.text(`• ${user}`, 25, currentY + (index * 8));
+        });
+        
+        if (metrics.unauthorizedUsers.length > 10) {
+          pdf.text(`• ... and ${metrics.unauthorizedUsers.length - 10} more`, 25, currentY + (usersToDisplay.length * 8));
+          currentY += (usersToDisplay.length + 1) * 8;
+        } else {
+          currentY += usersToDisplay.length * 8;
         }
-      };
+        
+        currentY += 15;
+      }
       
-      // Convert to JSON string
-      const jsonString = JSON.stringify(reportData, null, 2);
+      if (metrics.phishingAttempts && metrics.phishingAttempts.length > 0) {
+        if (currentY > 230) {
+          pdf.addPage();
+          currentY = 20;
+        }
+        
+        pdf.setFontSize(16);
+        pdf.setTextColor(33, 33, 33);
+        pdf.text("Phishing Attempts", 20, currentY);
+        
+        currentY += 10;
+        pdf.setFontSize(12);
+        pdf.setTextColor(60, 60, 60);
+        
+        const phishingToDisplay = metrics.phishingAttempts.slice(0, 10);
+        phishingToDisplay.forEach((url, index) => {
+          const displayUrl = url.length > 50 ? url.substring(0, 47) + "..." : url;
+          pdf.text(`• ${displayUrl}`, 25, currentY + (index * 8));
+        });
+        
+        if (metrics.phishingAttempts.length > 10) {
+          pdf.text(`• ... and ${metrics.phishingAttempts.length - 10} more`, 25, currentY + (phishingToDisplay.length * 8));
+          currentY += (phishingToDisplay.length + 1) * 8;
+        } else {
+          currentY += phishingToDisplay.length * 8;
+        }
+        
+        currentY += 15;
+      }
       
-      // Create a blob and download link
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
+      if (currentY > 220) {
+        pdf.addPage();
+        currentY = 20;
+      }
       
-      // Create download link and trigger download
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'security-threat-report.json';
-      document.body.appendChild(link);
-      link.click();
+      pdf.setFontSize(16);
+      pdf.setTextColor(33, 33, 33);
+      pdf.text("Recommendations", 20, currentY);
       
-      // Clean up
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      currentY += 10;
+      pdf.setFontSize(12);
+      pdf.setTextColor(60, 60, 60);
+      
+      const recommendations = [
+        "Implement stricter access controls for sensitive data",
+        "Provide additional security training for users",
+        "Update phishing detection and prevention systems",
+        "Monitor unusual data access patterns",
+        "Review and update data leak prevention policies"
+      ];
+      
+      recommendations.forEach((recommendation, index) => {
+        pdf.text(`${index + 1}. ${recommendation}`, 25, currentY + (index * 8));
+      });
+      
+      currentY += recommendations.length * 8 + 15;
+      
+      if (currentY > 230) {
+        pdf.addPage();
+        currentY = 20;
+      }
+      
+      pdf.setFontSize(16);
+      pdf.setTextColor(33, 33, 33);
+      pdf.text("Data Visualizations", 20, currentY);
+      
+      pdf.save("security-threat-report.pdf");
       
       toast({
         title: "Report downloaded",
-        description: "Security threat analysis report has been downloaded",
+        description: "Security threat analysis report has been downloaded as PDF",
       });
     } catch (error) {
-      console.error("Error generating report:", error);
+      console.error("Error generating PDF report:", error);
       toast({
         title: "Download failed",
         description: "There was an error generating the security report",
@@ -110,7 +208,6 @@ const Dashboard = () => {
     }
   };
 
-  // Default data when no dataset is uploaded
   const defaultNetworkData = [
     { name: "Mon", Traffic: 120, Alerts: 20 },
     { name: "Tue", Traffic: 180, Alerts: 10 },
@@ -145,14 +242,12 @@ const Dashboard = () => {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-  // Use uploaded dataset metrics or defaults
   const networkData = metrics?.networkData || defaultNetworkData;
   const anomalyDistribution = metrics?.anomalyDistribution || defaultAnomalyDistribution;
   const userStats = metrics?.userStats || defaultUserStats;
   const dataLeakageStats = metrics?.dataLeakageStats || defaultDataLeakageStats;
   const lastUpdated = metrics?.lastUpdated;
 
-  // Get alert icon based on type
   const getAlertIcon = (type: string) => {
     switch (type) {
       case 'network': return <Network className="h-5 w-5 text-red-500 mt-0.5" />;
@@ -163,7 +258,6 @@ const Dashboard = () => {
     }
   };
 
-  // Get background color based on severity
   const getAlertBgColor = (severity: string) => {
     switch (severity) {
       case 'high': return 'bg-red-50';
@@ -173,7 +267,6 @@ const Dashboard = () => {
     }
   };
 
-  // Get threat type description
   const getThreatTypeLabel = (index: number) => {
     const threatTypes = [
       "Phishing Attempt", 
@@ -213,7 +306,6 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {/* Dataset upload status */}
         {isDatasetUploaded && metrics?.lastUpdated && (
           <div className="mb-8 bg-green-50 p-4 rounded-xl border border-green-100 max-w-3xl mx-auto">
             <div className="flex items-center gap-3">
@@ -240,9 +332,7 @@ const Dashboard = () => {
               : "opacity-0 transform translate-y-20"
           }`}
         >
-          {/* Header Cards Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* Number of Users Card */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-50">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
@@ -270,7 +360,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Threats by Type Card */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-50">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center">
@@ -301,7 +390,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Data Leakage Card */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-50">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">

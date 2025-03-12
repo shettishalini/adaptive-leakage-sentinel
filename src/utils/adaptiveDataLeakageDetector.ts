@@ -272,6 +272,59 @@ export class AdaptiveDataLeakageDetector {
     
     return report;
   }
+  
+  // New method to generate PDF report data
+  public generatePdfReportData(csvData: string[][]): {
+    summary: {
+      totalRecords: number;
+      threatCount: number; 
+      threatPercentage: string;
+      date: string;
+    };
+    threatTypes: Array<{type: string; count: number}>;
+    unauthorizedUsers: string[];
+    phishingAttempts: string[];
+    recommendations: string[];
+  } {
+    if (!csvData) {
+      throw new Error("No data has been processed yet.");
+    }
+    
+    const analysisResults = this.processData(csvData);
+    const { predictions, threatTypes, unauthorizedUsers, phishingAttempts } = analysisResults;
+    
+    // Count threats
+    const totalThreats = predictions.filter(p => p === 1).length;
+    const totalRecords = predictions.length;
+    const threatPercentage = totalRecords > 0 ? (totalThreats / totalRecords * 100).toFixed(2) : 0;
+    
+    // Format threat types for table
+    const formattedThreatTypes = Object.entries(threatTypes)
+      .filter(([_, count]) => count > 0)
+      .map(([type, count]) => ({ type, count }));
+    
+    // Standard recommendations
+    const recommendations = [
+      "Implement stricter access controls for sensitive data",
+      "Provide additional security training for users",
+      "Update phishing detection and prevention systems",
+      "Monitor unusual data access patterns",
+      "Review and update data leak prevention policies"
+    ];
+    
+    return {
+      summary: {
+        totalRecords,
+        threatCount: totalThreats,
+        threatPercentage,
+        date: new Date().toLocaleString(),
+      },
+      threatTypes: formattedThreatTypes,
+      unauthorizedUsers,
+      phishingAttempts,
+      recommendations
+    };
+  }
 }
 
 // Create and export a singleton instance
