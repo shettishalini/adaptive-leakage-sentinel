@@ -36,6 +36,10 @@ export interface DatasetMetrics {
   phishingAttempts: string[];
   dataSensitivity: Record<string, string>;
   report: string | null;
+  modelTrained?: boolean;
+  accuracy?: number;
+  precision?: number;
+  recall?: number;
 }
 
 export interface DatasetContextProps {

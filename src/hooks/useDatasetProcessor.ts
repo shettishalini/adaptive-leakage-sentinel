@@ -76,7 +76,11 @@ export const useDatasetProcessor = () => {
               unauthorizedUsers: detectorResults.unauthorizedUsers,
               phishingAttempts: detectorResults.phishingAttempts,
               dataSensitivity: detectorResults.dataSensitivity,
-              report: null // Will be generated on download
+              report: null, // Will be generated on download
+              modelTrained: detectorResults.modelTrained || false,
+              accuracy: detectorResults.accuracy,
+              precision: detectorResults.precision,
+              recall: detectorResults.recall
             };
             
             resolve(generatedMetrics);

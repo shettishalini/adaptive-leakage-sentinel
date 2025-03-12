@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Upload, FileText, CheckCircle, XCircle, Shield, Download } from "lucide-react";
+import { Upload, FileText, CheckCircle, XCircle, Shield, Download, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useDataset } from "@/contexts/DatasetContext";
@@ -9,13 +8,13 @@ const DatasetUpload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [isTraining, setIsTraining] = useState(false);
   const { toast } = useToast();
   const { setIsDatasetUploaded, setMetrics, processCSVFile, metrics, generateReport } = useDataset();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      // Check if it's a CSV file
       if (!selectedFile.name.toLowerCase().endsWith('.csv')) {
         toast({
           title: "Invalid file format",
@@ -41,22 +40,20 @@ const DatasetUpload = () => {
     }
 
     setUploading(true);
+    setIsTraining(true);
     
     try {
-      // Process the CSV file
       const metrics = await processCSVFile(file);
       
-      // Update context with the processed metrics
       setMetrics(metrics);
       setIsDatasetUploaded(true);
       
       setUploadSuccess(true);
       toast({
-        title: "Upload successful",
-        description: "Your CSV dataset has been analyzed for potential data leaks and threats",
+        title: "Model training and analysis complete",
+        description: `Your dataset has been analyzed with ${metrics.modelTrained ? 'trained model' : 'default detection rules'}`,
       });
       
-      // Scroll to dashboard after successful upload
       setTimeout(() => {
         const dashboardElement = document.getElementById('dashboard');
         if (dashboardElement) {
@@ -72,6 +69,7 @@ const DatasetUpload = () => {
       });
     } finally {
       setUploading(false);
+      setIsTraining(false);
     }
   };
 
@@ -85,7 +83,6 @@ const DatasetUpload = () => {
       return;
     }
     
-    // Generate report
     const report = generateReport();
     if (!report) {
       toast({
@@ -96,7 +93,6 @@ const DatasetUpload = () => {
       return;
     }
     
-    // Create download
     const blob = new Blob([report], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -105,7 +101,6 @@ const DatasetUpload = () => {
     document.body.appendChild(a);
     a.click();
     
-    // Clean up
     URL.revokeObjectURL(url);
     document.body.removeChild(a);
     
@@ -123,7 +118,6 @@ const DatasetUpload = () => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile) {
-      // Check if it's a CSV file
       if (!droppedFile.name.toLowerCase().endsWith('.csv')) {
         toast({
           title: "Invalid file format",
@@ -143,10 +137,10 @@ const DatasetUpload = () => {
       <div className="container mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Upload Your CSV Dataset for Threat Analysis
+            Upload Your CSV Dataset for ML-Powered Threat Analysis
           </h2>
           <p className="text-gray-600">
-            Our adaptive data leakage detection system uses continuous learning to dynamically identify and mitigate threats in real-time
+            Our adaptive data leakage detection system automatically trains on your dataset to identify and predict potential threats
           </p>
         </div>
 
@@ -161,8 +155,12 @@ const DatasetUpload = () => {
             {uploadSuccess ? (
               <div className="flex flex-col items-center">
                 <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-                <h3 className="text-xl font-semibold text-green-700">Threat Analysis Complete!</h3>
-                <p className="text-gray-600 mt-2 mb-4">Your dataset has been analyzed for potential data leakage threats</p>
+                <h3 className="text-xl font-semibold text-green-700">Model Training & Analysis Complete!</h3>
+                <p className="text-gray-600 mt-2 mb-4">
+                  {metrics?.modelTrained 
+                    ? `Model trained with accuracy: ${metrics.accuracy ? (metrics.accuracy * 100).toFixed(2) : 0}%`
+                    : 'Dataset analyzed using default detection rules'}
+                </p>
                 <div className="flex gap-4 mt-2">
                   <Button
                     onClick={handleDownloadReport}
@@ -234,7 +232,14 @@ const DatasetUpload = () => {
                       disabled={uploading}
                       className="w-full"
                     >
-                      {uploading ? "Analyzing Threats..." : "Analyze Dataset for Threats"}
+                      {isTraining ? (
+                        <div className="flex items-center gap-2">
+                          <Brain className="animate-pulse h-4 w-4" />
+                          Training Model & Analyzing Threats...
+                        </div>
+                      ) : (
+                        "Train Model & Analyze Dataset"
+                      )}
                     </Button>
                   </div>
                 )}
@@ -243,8 +248,14 @@ const DatasetUpload = () => {
           </div>
 
           <div className="mt-8 bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Advanced Threat Detection System</h3>
+            <h3 className="text-lg font-semibold mb-4">ML-Powered Threat Detection System</h3>
             <ul className="space-y-3">
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Brain className="h-3 w-3 text-primary" />
+                </div>
+                <p className="text-sm text-gray-600">Automatically trains a machine learning model on your dataset to predict threats</p>
+              </li>
               <li className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Shield className="h-3 w-3 text-primary" />
@@ -255,13 +266,7 @@ const DatasetUpload = () => {
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Shield className="h-3 w-3 text-primary" />
                 </div>
-                <p className="text-sm text-gray-600">Uses AI to continually learn from new data patterns for improved threat detection</p>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Shield className="h-3 w-3 text-primary" />
-                </div>
-                <p className="text-sm text-gray-600">Generates comprehensive reports with actionable threat mitigation recommendations</p>
+                <p className="text-sm text-gray-600">Provides model performance metrics including accuracy, precision, and recall</p>
               </li>
             </ul>
           </div>
