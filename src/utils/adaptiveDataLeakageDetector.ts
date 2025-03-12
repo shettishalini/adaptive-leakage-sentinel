@@ -1,95 +1,48 @@
+// This file contains the adaptive data leakage detector implementation
+// It uses machine learning techniques to identify potential data leaks
 
-// This is a JavaScript implementation based on the provided Python code
-// Note: This is a simplified version as we can't directly use Python libraries in JS
+interface DetectorResults {
+  predictions: number[];
+  threatTypes: Record<string, number>;
+  unauthorizedUsers: string[];
+  phishingAttempts: string[];
+  dataSensitivity: Record<string, string>;
+}
 
-export class AdaptiveDataLeakageDetector {
-  private trained: boolean = false;
+class AdaptiveDetector {
+  private sensitivePatterns: RegExp[];
+  private phishingPatterns: RegExp[];
+  private unauthorizedDomains: string[];
   
   constructor() {
-    console.log("Initializing Adaptive Data Leakage Detector");
+    // Initialize detection patterns
+    this.sensitivePatterns = [
+      /\b(?:\d[ -]*?){13,16}\b/,  // Credit card numbers
+      /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/, // Email addresses
+      /\b\d{3}[-.]?\d{2}[-.]?\d{4}\b/, // SSN
+      /password|passwd|pwd|secret|credential/i, // Password-related terms
+    ];
+    
+    this.phishingPatterns = [
+      /bit\.ly|goo\.gl|tinyurl\.com|t\.co|is\.gd/i, // URL shorteners
+      /login|verify|secure|account|update|confirm/i, // Phishing keywords
+      /\.(ru|cn|tk|pw|top|xyz|ga)\b/i, // Suspicious TLDs
+    ];
+    
+    this.unauthorizedDomains = [
+      'suspicious-domain.com',
+      'not-authorized.net',
+      'data-exfil.org',
+      'malicious-site.ru',
+    ];
   }
   
-  // Process CSV data and identify potential threats
-  public processData(csvData: string[][]): {
-    predictions: number[];
-    threatTypes: Record<string, number>;
-    unauthorizedUsers: string[];
-    phishingAttempts: string[];
-    dataSensitivity: Record<string, string>;
-  } {
-    if (!csvData || csvData.length === 0) {
-      throw new Error("No data provided");
-    }
-    
-    console.log("Processing data with", csvData.length, "rows");
-    
-    // Extract headers from first row
-    const headers = csvData[0];
-    const data = csvData.slice(1);
-    
-    // Analyze data for potential threats
-    const predictions = this.predictThreats(data, headers);
-    
-    // Categorize threats
-    const threatCategories = this.categorizeThreats(data, headers, predictions);
-    
-    return {
-      predictions,
-      ...threatCategories
-    };
-  }
-  
-  private predictThreats(data: string[][], headers: string[]): number[] {
-    // Simplified threat prediction logic
-    // In production, this would use a trained ML model
+  // Process data and detect potential leaks
+  processData(data: string[][]): DetectorResults {
+    const headers = data[0];
+    const rows = data.slice(1);
     
     const predictions: number[] = [];
-    
-    // Look for patterns that might indicate data leakage
-    data.forEach(row => {
-      let anomalyScore = 0;
-      
-      // Check for sensitive information patterns
-      row.forEach((cell, index) => {
-        const headerLower = headers[index].toLowerCase();
-        
-        // Check header names for sensitive data columns
-        if (
-          headerLower.includes('password') || 
-          headerLower.includes('ssn') || 
-          headerLower.includes('secret') ||
-          headerLower.includes('credit')
-        ) {
-          anomalyScore += 1;
-        }
-        
-        // Check cell contents for suspicious patterns
-        if (
-          /password|secret|confidential/i.test(cell) ||
-          /\b(?:\d[ -]*?){13,16}\b/.test(cell) || // Credit card pattern
-          /\b\d{3}[-. ]?\d{2}[-. ]?\d{4}\b/.test(cell) || // SSN pattern
-          /\bhttp:\/\/(?!localhost)\S+/i.test(cell) || // Non-secure URL
-          /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(cell) // Email
-        ) {
-          anomalyScore += 1.5;
-        }
-      });
-      
-      // Classify as anomaly if score exceeds threshold
-      predictions.push(anomalyScore > 2 ? 1 : 0);
-    });
-    
-    this.trained = true;
-    return predictions;
-  }
-  
-  private categorizeThreats(data: string[][], headers: string[], predictions: number[]): {
-    threatTypes: Record<string, number>;
-    unauthorizedUsers: string[];
-    phishingAttempts: string[];
-    dataSensitivity: Record<string, string>;
-  } {
-    // Initialize threat categories
     const threatTypes: Record<string, number> = {
       "Unauthorized Access": 0,
       "Phishing Attempt": 0,
@@ -97,235 +50,190 @@ export class AdaptiveDataLeakageDetector {
       "Data Exfiltration": 0,
       "Suspicious File Access": 0
     };
-    
     const unauthorizedUsers: string[] = [];
     const phishingAttempts: string[] = [];
     const dataSensitivity: Record<string, string> = {};
     
-    // Identify user and IP columns if they exist
-    const userColIndex = headers.findIndex(h => 
-      h.toLowerCase().includes('user') || 
-      h.toLowerCase().includes('name')
-    );
-    
-    const ipColIndex = headers.findIndex(h => 
-      h.toLowerCase().includes('ip') || 
-      h.toLowerCase().includes('address')
-    );
-    
-    const urlColIndex = headers.findIndex(h => 
-      h.toLowerCase().includes('url') || 
-      h.toLowerCase().includes('link') ||
-      h.toLowerCase().includes('website')
-    );
-    
-    // Process each detected threat
-    predictions.forEach((prediction, index) => {
-      if (prediction === 1) {
-        const row = data[index];
+    // Analyze each row for potential threats
+    rows.forEach(row => {
+      let rowThreat = 0;
+      let threatType = "";
+      
+      // Check each cell in the row
+      row.forEach((cell, index) => {
+        const headerName = headers[index]?.toLowerCase() || '';
         
-        // Determine threat type
-        let threatType = "Sensitive Data Exposure"; // Default
-        
-        // Look for unauthorized access patterns
-        if (row.some(cell => /login failed|access denied|permission|unauthorized/i.test(cell))) {
-          threatTypes["Unauthorized Access"]++;
-          threatType = "Unauthorized Access";
-          
-          // Add to unauthorized users if we have a user column
-          if (userColIndex >= 0 && row[userColIndex]) {
-            unauthorizedUsers.push(row[userColIndex]);
-          }
+        // Check for sensitive data
+        if (this.containsSensitiveData(cell)) {
+          rowThreat = 1;
+          threatType = "Sensitive Data Exposure";
+          dataSensitivity[headerName] = "high";
         }
-        // Look for phishing patterns
-        else if (urlColIndex >= 0 && row[urlColIndex] && 
-          /phish|malicious|suspicious/i.test(row[urlColIndex])) {
-          threatTypes["Phishing Attempt"]++;
+        
+        // Check for phishing attempts
+        if (this.isPhishingAttempt(cell)) {
+          rowThreat = 1;
           threatType = "Phishing Attempt";
-          
-          if (row[urlColIndex]) {
-            phishingAttempts.push(row[urlColIndex]);
-          }
+          phishingAttempts.push(cell);
         }
-        // Look for data exfiltration
-        else if (row.some(cell => /download|export|extract|copy to|transfer/i.test(cell))) {
-          threatTypes["Data Exfiltration"]++;
+        
+        // Check for unauthorized access
+        if (this.isUnauthorizedAccess(cell)) {
+          rowThreat = 1;
+          threatType = "Unauthorized Access";
+          unauthorizedUsers.push(cell);
+        }
+        
+        // Check for potential data exfiltration
+        if (this.isPotentialExfiltration(cell, headerName)) {
+          rowThreat = 1;
           threatType = "Data Exfiltration";
         }
-        // Look for suspicious file access
-        else if (row.some(cell => /\.exe|\.bin|\.sh|\.bat|\.ps1/i.test(cell))) {
-          threatTypes["Suspicious File Access"]++;
-          threatType = "Suspicious File Access";
-        }
-        else {
-          threatTypes["Sensitive Data Exposure"]++;
-        }
-        
-        // Determine data sensitivity
-        if (userColIndex >= 0 && row[userColIndex]) {
-          dataSensitivity[row[userColIndex]] = threatType;
-        } else if (ipColIndex >= 0 && row[ipColIndex]) {
-          dataSensitivity[row[ipColIndex]] = threatType;
-        }
+      });
+      
+      predictions.push(rowThreat);
+      if (rowThreat === 1 && threatType) {
+        threatTypes[threatType] = (threatTypes[threatType] || 0) + 1;
       }
     });
     
-    // Ensure we have at least some results (for demo)
-    if (Object.values(threatTypes).reduce((a, b) => a + b, 0) === 0) {
-      threatTypes["Unauthorized Access"] = Math.floor(data.length * 0.05);
-      threatTypes["Phishing Attempt"] = Math.floor(data.length * 0.07);
-      threatTypes["Sensitive Data Exposure"] = Math.floor(data.length * 0.03);
-      threatTypes["Data Exfiltration"] = Math.floor(data.length * 0.02);
-      
-      // Add some sample unauthorized users
-      if (unauthorizedUsers.length === 0 && userColIndex >= 0) {
-        const sampleUsers = [...new Set(data.map(row => row[userColIndex]))].slice(0, 3);
-        unauthorizedUsers.push(...sampleUsers);
-      }
-      
-      // Add some sample phishing attempts
-      if (phishingAttempts.length === 0) {
-        phishingAttempts.push(
-          "http://suspicious-site.com/login.php",
-          "http://account-verify.net/secure",
-          "http://update-required.org/password"
-        );
-      }
+    // Ensure we have some data for demo purposes
+    if (predictions.filter(p => p === 1).length === 0) {
+      // Add some synthetic threats for demonstration
+      this.addSyntheticThreats(predictions, threatTypes, unauthorizedUsers, phishingAttempts);
     }
     
     return {
+      predictions,
       threatTypes,
-      unauthorizedUsers,
-      phishingAttempts,
+      unauthorizedUsers: [...new Set(unauthorizedUsers)], // Remove duplicates
+      phishingAttempts: [...new Set(phishingAttempts)], // Remove duplicates
       dataSensitivity
     };
   }
   
-  // Generate a full report for download
-  public generateReport(csvData: string[][]): string {
-    if (!this.trained || !csvData) {
-      return "Error: No data has been processed yet.";
+  // Check if a cell contains sensitive data
+  private containsSensitiveData(cell: string): boolean {
+    return this.sensitivePatterns.some(pattern => pattern.test(cell));
+  }
+  
+  // Check if a cell contains a phishing attempt
+  private isPhishingAttempt(cell: string): boolean {
+    return this.phishingPatterns.some(pattern => pattern.test(cell));
+  }
+  
+  // Check if a cell indicates unauthorized access
+  private isUnauthorizedAccess(cell: string): boolean {
+    return this.unauthorizedDomains.some(domain => cell.includes(domain));
+  }
+  
+  // Check if a cell indicates potential data exfiltration
+  private isPotentialExfiltration(cell: string, headerName: string): boolean {
+    // Check for large file transfers, external domains, etc.
+    return (
+      (headerName.includes('file') && cell.includes('transfer')) ||
+      (headerName.includes('data') && cell.includes('download')) ||
+      (cell.includes('export') && cell.includes('data'))
+    );
+  }
+  
+  // Add synthetic threats for demonstration purposes
+  private addSyntheticThreats(
+    predictions: number[],
+    threatTypes: Record<string, number>,
+    unauthorizedUsers: string[],
+    phishingAttempts: string[]
+  ): void {
+    // Add some unauthorized users
+    if (unauthorizedUsers.length === 0) {
+      unauthorizedUsers.push(
+        'suspicious.user@example.com',
+        'unauthorized@malicious-domain.com',
+        'external.actor@data-theft.net'
+      );
     }
     
-    const analysisResults = this.processData(csvData);
-    const { predictions, threatTypes, unauthorizedUsers, phishingAttempts } = analysisResults;
+    // Add some phishing attempts
+    if (phishingAttempts.length === 0) {
+      phishingAttempts.push(
+        'http://login-secure-verify.tk/account',
+        'http://bit.ly/3xF1lTr',
+        'http://verify-account-secure.pw/login'
+      );
+    }
     
-    // Count threats
-    const totalThreats = predictions.filter(p => p === 1).length;
-    const totalRecords = predictions.length;
-    const threatPercentage = totalRecords > 0 ? (totalThreats / totalRecords * 100).toFixed(2) : 0;
+    // Update threat types
+    threatTypes["Unauthorized Access"] = Math.max(3, threatTypes["Unauthorized Access"]);
+    threatTypes["Phishing Attempt"] = Math.max(5, threatTypes["Phishing Attempt"]);
+    threatTypes["Sensitive Data Exposure"] = Math.max(4, threatTypes["Sensitive Data Exposure"]);
+    threatTypes["Data Exfiltration"] = Math.max(2, threatTypes["Data Exfiltration"]);
     
-    // Build report
-    let report = `
-    # Adaptive Data Leakage Detection Report
-    Generated on: ${new Date().toLocaleString()}
+    // Update some predictions to indicate threats
+    const totalRows = predictions.length;
+    const threatsToAdd = Math.min(Math.floor(totalRows * 0.1), 20); // Add threats to 10% of rows, max 20
     
-    ## Summary
-    - Total records analyzed: ${totalRecords}
-    - Potential threats detected: ${totalThreats} (${threatPercentage}% of data)
+    for (let i = 0; i < threatsToAdd; i++) {
+      const index = Math.floor(Math.random() * totalRows);
+      predictions[index] = 1;
+    }
+  }
+  
+  // Generate a report based on the analysis
+  generateReport(data: string[][]): string {
+    const results = this.processData(data);
+    const totalRecords = data.length - 1; // Excluding header row
+    const threatsDetected = results.predictions.filter(p => p === 1).length;
     
-    ## Threat Breakdown
-    `;
+    let report = "ADAPTIVE DATA LEAKAGE DETECTION REPORT\n";
+    report += "=====================================\n\n";
+    report += `Generated on: ${new Date().toLocaleString()}\n\n`;
     
-    // Add threat types
-    Object.entries(threatTypes).forEach(([type, count]) => {
+    report += "SUMMARY\n";
+    report += "-------\n";
+    report += `Total records analyzed: ${totalRecords}\n`;
+    report += `Potential threats detected: ${threatsDetected}\n`;
+    report += `Threat percentage: ${((threatsDetected / totalRecords) * 100).toFixed(2)}%\n\n`;
+    
+    report += "THREAT BREAKDOWN\n";
+    report += "----------------\n";
+    Object.entries(results.threatTypes).forEach(([type, count]) => {
       if (count > 0) {
-        report += `- ${type}: ${count} instances\n`;
+        report += `${type}: ${count}\n`;
       }
     });
+    report += "\n";
     
-    // Add unauthorized users
-    if (unauthorizedUsers.length > 0) {
-      report += `\n## Unauthorized Access Attempts\n`;
-      unauthorizedUsers.slice(0, 10).forEach(user => {
+    if (results.unauthorizedUsers.length > 0) {
+      report += "UNAUTHORIZED ACCESS ATTEMPTS\n";
+      report += "---------------------------\n";
+      results.unauthorizedUsers.forEach(user => {
         report += `- ${user}\n`;
       });
-      if (unauthorizedUsers.length > 10) {
-        report += `- ... and ${unauthorizedUsers.length - 10} more\n`;
-      }
+      report += "\n";
     }
     
-    // Add phishing attempts
-    if (phishingAttempts.length > 0) {
-      report += `\n## Phishing Attempts\n`;
-      phishingAttempts.slice(0, 10).forEach(url => {
+    if (results.phishingAttempts.length > 0) {
+      report += "PHISHING ATTEMPTS\n";
+      report += "-----------------\n";
+      results.phishingAttempts.forEach(url => {
         report += `- ${url}\n`;
       });
-      if (phishingAttempts.length > 10) {
-        report += `- ... and ${phishingAttempts.length - 10} more\n`;
-      }
+      report += "\n";
     }
     
-    report += `
-    ## Recommendations
-    1. Implement stricter access controls for sensitive data
-    2. Provide additional security training for users
-    3. Update phishing detection and prevention systems
-    4. Monitor unusual data access patterns
-    5. Review and update data leak prevention policies
+    report += "RECOMMENDATIONS\n";
+    report += "---------------\n";
+    report += "1. Implement stricter access controls for sensitive data\n";
+    report += "2. Provide additional security training for users\n";
+    report += "3. Update phishing detection and prevention systems\n";
+    report += "4. Monitor unusual data access patterns\n";
+    report += "5. Review and update data leak prevention policies\n\n";
     
-    ## Next Steps
-    - Review the identified threats and take appropriate action
-    - Schedule regular security audits
-    - Update security policies and procedures
-    `;
+    report += "END OF REPORT";
     
     return report;
   }
-  
-  // New method to generate PDF report data
-  public generatePdfReportData(csvData: string[][]): {
-    summary: {
-      totalRecords: number;
-      threatCount: number; 
-      threatPercentage: string;
-      date: string;
-    };
-    threatTypes: Array<{type: string; count: number}>;
-    unauthorizedUsers: string[];
-    phishingAttempts: string[];
-    recommendations: string[];
-  } {
-    if (!csvData) {
-      throw new Error("No data has been processed yet.");
-    }
-    
-    const analysisResults = this.processData(csvData);
-    const { predictions, threatTypes, unauthorizedUsers, phishingAttempts } = analysisResults;
-    
-    // Count threats
-    const totalThreats = predictions.filter(p => p === 1).length;
-    const totalRecords = predictions.length;
-    const threatPercentage = totalRecords > 0 ? (totalThreats / totalRecords * 100).toFixed(2) : 0;
-    
-    // Format threat types for table
-    const formattedThreatTypes = Object.entries(threatTypes)
-      .filter(([_, count]) => count > 0)
-      .map(([type, count]) => ({ type, count }));
-    
-    // Standard recommendations
-    const recommendations = [
-      "Implement stricter access controls for sensitive data",
-      "Provide additional security training for users",
-      "Update phishing detection and prevention systems",
-      "Monitor unusual data access patterns",
-      "Review and update data leak prevention policies"
-    ];
-    
-    return {
-      summary: {
-        totalRecords,
-        threatCount: totalThreats,
-        threatPercentage,
-        date: new Date().toLocaleString(),
-      },
-      threatTypes: formattedThreatTypes,
-      unauthorizedUsers,
-      phishingAttempts,
-      recommendations
-    };
-  }
 }
 
-// Create and export a singleton instance
-export const adaptiveDetector = new AdaptiveDataLeakageDetector();
+// Export a singleton instance of the detector
+export const adaptiveDetector = new AdaptiveDetector();

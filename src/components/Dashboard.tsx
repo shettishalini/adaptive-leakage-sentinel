@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import {
@@ -87,7 +88,7 @@ const Dashboard = () => {
       pdf.setTextColor(33, 33, 33);
       pdf.text("Threat Breakdown", 20, 80);
       
-      const threatTypeData = Object.entries(metrics.threatTypes).map(([type, count]) => [type, count.toString()]);
+      const threatTypeData = Object.entries(metrics.threatTypes).map(([type, count]) => [type, String(count)]);
       
       if (threatTypeData.length > 0) {
         autoTable(pdf, {
@@ -99,7 +100,8 @@ const Dashboard = () => {
         });
       }
       
-      let currentY = pdf.lastAutoTable?.finalY || 85;
+      // Fix the TypeScript error by using a type assertion for lastAutoTable
+      let currentY = (pdf as any).lastAutoTable?.finalY || 85;
       currentY += 15;
       
       if (metrics.unauthorizedUsers && metrics.unauthorizedUsers.length > 0) {
