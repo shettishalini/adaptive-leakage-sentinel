@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import {
@@ -21,14 +22,6 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
-declare module "jspdf" {
-  interface jsPDF {
-    lastAutoTable?: {
-      finalY?: number;
-    };
-  }
-}
 
 const Dashboard = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -188,7 +181,7 @@ const Dashboard = () => {
       
       // THREAT DISTRIBUTION VISUALIZATION
       // Get the Y position after the last table
-      let previousTableEndY = pdf.lastAutoTable?.finalY || yPosition + 30;
+      const previousTableEndY = pdf.lastAutoTable?.finalY || yPosition + 30;
       yPosition = previousTableEndY + 15;
       
       pdf.setFontSize(14);

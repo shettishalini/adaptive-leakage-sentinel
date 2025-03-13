@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { Upload, FileText, CheckCircle, XCircle, Shield, Download, Brain, AlertTriangle } from "lucide-react";
+import { Upload, FileText, CheckCircle, XCircle, Shield, Download, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useDataset } from "@/contexts/DatasetContext";
-import { generatePDFReport } from "@/utils/pdfGenerator";
 
 const DatasetUpload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isTraining, setIsTraining] = useState(false);
   const { toast } = useToast();
   const { setIsDatasetUploaded, setMetrics, processCSVFile, metrics, generateReport } = useDataset();
@@ -28,7 +26,6 @@ const DatasetUpload = () => {
       
       setFile(selectedFile);
       setUploadSuccess(false);
-      setUploadError(null);
     }
   };
 
@@ -44,7 +41,6 @@ const DatasetUpload = () => {
 
     setUploading(true);
     setIsTraining(true);
-    setUploadError(null);
     
     try {
       const metrics = await processCSVFile(file);
@@ -66,11 +62,9 @@ const DatasetUpload = () => {
       }, 1000);
     } catch (error) {
       console.error("Error processing CSV file:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      setUploadError(errorMessage);
       toast({
         title: "Upload failed",
-        description: "There was an error processing your CSV file. Please check the format and try again.",
+        description: "There was an error processing your CSV file. Please ensure it's a valid CSV format.",
         variant: "destructive",
       });
     } finally {
@@ -89,30 +83,31 @@ const DatasetUpload = () => {
       return;
     }
     
-    try {
-      const textReport = generateReport();
-      if (textReport) {
-        const updatedMetrics = { ...metrics, report: textReport };
-        
-        const doc = generatePDFReport(updatedMetrics);
-        
-        doc.save('DataLeakageAnalysisReport.pdf');
-        
-        toast({
-          title: "Report downloaded",
-          description: "Comprehensive threat analysis report has been saved to your device",
-        });
-      } else {
-        throw new Error("Failed to generate report content");
-      }
-    } catch (error) {
-      console.error("Error generating PDF report:", error);
+    const report = generateReport();
+    if (!report) {
       toast({
         title: "Report generation failed",
-        description: "Unable to generate the comprehensive report PDF",
+        description: "Unable to generate a threat analysis report",
         variant: "destructive",
       });
+      return;
     }
+    
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'DataLeakageReport.txt';
+    document.body.appendChild(a);
+    a.click();
+    
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    toast({
+      title: "Report downloaded",
+      description: "Threat analysis report has been saved to your device",
+    });
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -134,7 +129,6 @@ const DatasetUpload = () => {
       
       setFile(droppedFile);
       setUploadSuccess(false);
-      setUploadError(null);
     }
   };
 
@@ -153,7 +147,7 @@ const DatasetUpload = () => {
         <div className="max-w-xl mx-auto">
           <div 
             className={`border-2 border-dashed rounded-lg p-8 text-center ${
-              file ? (uploadError ? "border-red-400" : "border-primary") : "border-gray-200"
+              file ? "border-primary" : "border-gray-200"
             } hover:border-primary transition-colors`}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
@@ -173,38 +167,15 @@ const DatasetUpload = () => {
                     className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
                   >
                     <Download size={16} />
-                    Download PDF Report
+                    Download Report
                   </Button>
                   <Button
-                    onClick={() => {
-                      setUploadSuccess(false);
-                      setUploadError(null);
-                    }}
+                    onClick={() => setUploadSuccess(false)}
                     variant="outline"
                   >
                     Upload Another File
                   </Button>
                 </div>
-              </div>
-            ) : uploadError ? (
-              <div className="flex flex-col items-center">
-                <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
-                <h3 className="text-xl font-semibold text-red-700">Upload Failed</h3>
-                <p className="text-gray-700 mt-2 mb-4">
-                  There was an error processing your CSV file. Please ensure it has the expected format.
-                </p>
-                <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded mb-4 max-w-full overflow-auto">
-                  Make sure your CSV has columns for: activity, user, timestamp, data accessed, location, IP address, device, action, and status.
-                </p>
-                <Button
-                  onClick={() => {
-                    setUploadError(null);
-                    setFile(null);
-                  }}
-                  variant="outline"
-                >
-                  Try Again
-                </Button>
               </div>
             ) : (
               <>

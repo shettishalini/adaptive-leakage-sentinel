@@ -1,4 +1,3 @@
-
 import { generateAlerts, generateNetworkData } from "./datasetUtils";
 
 // Define weights for different risk factors
@@ -105,16 +104,16 @@ export const adaptiveDetector = {
 
     // Process each record
     data.forEach(record => {
-      // Safely extract relevant fields from record - use empty string as fallback
-      const activity = record[0] || '';
-      const user = record[1] || '';
-      const timestamp = record[2] || '';
-      const dataAccessed = record[3] || '';
-      const location = record[4] || '';
-      const ipAddress = record[5] || '';
-      const device = record[6] || '';
-      const action = record[7] || '';
-      const status = record[8] || '';
+      // Extract relevant fields from record
+      const activity = record[0];
+      const user = record[1];
+      const timestamp = record[2];
+      const dataAccessed = record[3];
+      const location = record[4];
+      const ipAddress = record[5];
+      const device = record[6];
+      const action = record[7];
+      const status = record[8];
 
       // Check for unauthorized access
       if (action === "login" && status === "failed") {
@@ -124,7 +123,7 @@ export const adaptiveDetector = {
         }
       }
 
-      // Check for phishing attempts - safely call toLowerCase() with null checks
+      // Check for phishing attempts
       if (activity.toLowerCase().includes("phishing") || dataAccessed.toLowerCase().includes("phishing")) {
         threatTypes["Phishing Attempt"]++;
         if (!phishingAttempts.includes(dataAccessed)) {
@@ -237,14 +236,7 @@ export const adaptiveDetector = {
     let report = "Security Threat Analysis Report\n\n";
     report += "Executive Summary:\n";
     report += `Total records analyzed: ${data.length}\n`;
-    
-    // Safely check if records contain phishing mentions
-    const phishingCount = data.filter(record => {
-      const dataToCheck = record[0] || ''; // Access first column safely
-      return dataToCheck.toLowerCase().includes('phishing');
-    }).length;
-    
-    report += `Potential threats detected: ${phishingCount}\n\n`;
+    report += `Potential threats detected: ${data.filter(record => record.includes("phishing")).length}\n\n`;
 
     report += "Detailed Findings:\n";
     report += "Unauthorized Access Attempts:\n";

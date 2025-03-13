@@ -40,17 +40,6 @@ export interface DatasetMetrics {
   accuracy?: number;
   precision?: number;
   recall?: number;
-  csvFormat?: {
-    activity: number;
-    user: number;
-    timestamp: number;
-    dataAccessed: number;
-    location: number;
-    ipAddress: number;
-    device: number;
-    action: number;
-    status: number;
-  };
 }
 
 export interface DatasetContextProps {

@@ -38,30 +38,20 @@ export function DatasetProvider({ children }: { children: ReactNode }) {
 
   // Process CSV file and generate metrics using our adaptive detector
   const processCSVFile = async (file: File): Promise<DatasetMetrics> => {
-    try {
-      const result = await processCSV(file);
-      return result;
-    } catch (error) {
-      console.error("DatasetContext - Error processing CSV:", error);
-      throw error; // Re-throw to let component handle it
-    }
+    const result = await processCSV(file);
+    return result;
   };
 
   // Generate report from processed data
   const generateReport = (): string | null => {
-    try {
-      const report = genReport(metrics);
-      
-      // Update metrics with report
-      if (report && metrics) {
-        setMetrics(prev => prev ? { ...prev, report } : null);
-      }
-      
-      return report;
-    } catch (error) {
-      console.error("DatasetContext - Error generating report:", error);
-      return null;
+    const report = genReport(metrics);
+    
+    // Update metrics with report
+    if (report && metrics) {
+      setMetrics(prev => prev ? { ...prev, report } : null);
     }
+    
+    return report;
   };
 
   return (
