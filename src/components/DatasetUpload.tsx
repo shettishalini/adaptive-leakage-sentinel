@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { Upload, FileText, CheckCircle, XCircle, Shield, Download, Brain } from "lucide-react";
+import { Upload, FileText, CheckCircle, XCircle, Shield, Download, Brain, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useDataset } from "@/contexts/DatasetContext";
@@ -8,6 +9,7 @@ const DatasetUpload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isTraining, setIsTraining] = useState(false);
   const { toast } = useToast();
   const { setIsDatasetUploaded, setMetrics, processCSVFile, metrics, generateReport } = useDataset();
@@ -26,6 +28,7 @@ const DatasetUpload = () => {
       
       setFile(selectedFile);
       setUploadSuccess(false);
+      setUploadError(null);
     }
   };
 
@@ -41,6 +44,7 @@ const DatasetUpload = () => {
 
     setUploading(true);
     setIsTraining(true);
+    setUploadError(null);
     
     try {
       const metrics = await processCSVFile(file);
@@ -62,9 +66,11 @@ const DatasetUpload = () => {
       }, 1000);
     } catch (error) {
       console.error("Error processing CSV file:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      setUploadError(errorMessage);
       toast({
         title: "Upload failed",
-        description: "There was an error processing your CSV file. Please ensure it's a valid CSV format.",
+        description: "There was an error processing your CSV file. Please check the format and try again.",
         variant: "destructive",
       });
     } finally {
@@ -129,6 +135,7 @@ const DatasetUpload = () => {
       
       setFile(droppedFile);
       setUploadSuccess(false);
+      setUploadError(null);
     }
   };
 
@@ -147,7 +154,7 @@ const DatasetUpload = () => {
         <div className="max-w-xl mx-auto">
           <div 
             className={`border-2 border-dashed rounded-lg p-8 text-center ${
-              file ? "border-primary" : "border-gray-200"
+              file ? (uploadError ? "border-red-400" : "border-primary") : "border-gray-200"
             } hover:border-primary transition-colors`}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
@@ -170,12 +177,35 @@ const DatasetUpload = () => {
                     Download Report
                   </Button>
                   <Button
-                    onClick={() => setUploadSuccess(false)}
+                    onClick={() => {
+                      setUploadSuccess(false);
+                      setUploadError(null);
+                    }}
                     variant="outline"
                   >
                     Upload Another File
                   </Button>
                 </div>
+              </div>
+            ) : uploadError ? (
+              <div className="flex flex-col items-center">
+                <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
+                <h3 className="text-xl font-semibold text-red-700">Upload Failed</h3>
+                <p className="text-gray-700 mt-2 mb-4">
+                  There was an error processing your CSV file. Please ensure it has the expected format.
+                </p>
+                <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded mb-4 max-w-full overflow-auto">
+                  Make sure your CSV has columns for: activity, user, timestamp, data accessed, location, IP address, device, action, and status.
+                </p>
+                <Button
+                  onClick={() => {
+                    setUploadError(null);
+                    setFile(null);
+                  }}
+                  variant="outline"
+                >
+                  Try Again
+                </Button>
               </div>
             ) : (
               <>
