@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { Upload, FileText, CheckCircle, XCircle, Shield, Download, Brain, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useDataset } from "@/contexts/DatasetContext";
+import { generatePDFReport } from "@/utils/pdfGenerator";
 
 const DatasetUpload = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -89,31 +89,30 @@ const DatasetUpload = () => {
       return;
     }
     
-    const report = generateReport();
-    if (!report) {
+    try {
+      const textReport = generateReport();
+      if (textReport) {
+        const updatedMetrics = { ...metrics, report: textReport };
+        
+        const doc = generatePDFReport(updatedMetrics);
+        
+        doc.save('DataLeakageAnalysisReport.pdf');
+        
+        toast({
+          title: "Report downloaded",
+          description: "Comprehensive threat analysis report has been saved to your device",
+        });
+      } else {
+        throw new Error("Failed to generate report content");
+      }
+    } catch (error) {
+      console.error("Error generating PDF report:", error);
       toast({
         title: "Report generation failed",
-        description: "Unable to generate a threat analysis report",
+        description: "Unable to generate the comprehensive report PDF",
         variant: "destructive",
       });
-      return;
     }
-    
-    const blob = new Blob([report], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'DataLeakageReport.txt';
-    document.body.appendChild(a);
-    a.click();
-    
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    
-    toast({
-      title: "Report downloaded",
-      description: "Threat analysis report has been saved to your device",
-    });
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -174,7 +173,7 @@ const DatasetUpload = () => {
                     className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
                   >
                     <Download size={16} />
-                    Download Report
+                    Download PDF Report
                   </Button>
                   <Button
                     onClick={() => {
