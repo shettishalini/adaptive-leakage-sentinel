@@ -6,7 +6,6 @@ import Dashboard from "@/components/Dashboard";
 import DatasetUpload from "@/components/DatasetUpload";
 import HowItWorks from "@/components/HowItWorks";
 import CallToAction from "@/components/CallToAction";
-import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
@@ -20,7 +19,6 @@ const Index = () => {
       <Dashboard />
       <HowItWorks />
       <CallToAction />
-      <Footer />
     </div>
   );
 };
