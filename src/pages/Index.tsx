@@ -1,5 +1,4 @@
 
-import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
 import Dashboard from "@/components/Dashboard";
@@ -10,7 +9,6 @@ import CallToAction from "@/components/CallToAction";
 const Index = () => {
   return (
     <div className="overflow-hidden">
-      <Navbar />
       <Hero />
       <Features />
       <div id="dataset-upload">
