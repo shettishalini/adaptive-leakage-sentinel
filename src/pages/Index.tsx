@@ -1,7 +1,7 @@
 
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
-import Dashboard from "@/components/Dashboard";
+import Dashboard from "@/components/dashboard";
 import DatasetUpload from "@/components/DatasetUpload";
 import HowItWorks from "@/components/HowItWorks";
 import CallToAction from "@/components/CallToAction";
