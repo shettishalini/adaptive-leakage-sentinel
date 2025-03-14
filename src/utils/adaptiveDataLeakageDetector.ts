@@ -415,16 +415,21 @@ class AdaptiveDetector {
       report += "MODEL PERFORMANCE\n";
       report += "----------------\n";
       report += `Model trained: Yes\n`;
-      report += `Accuracy: ${(results.accuracy || 0).toFixed(4) * 100}%\n`;
-      report += `Precision: ${(results.precision || 0).toFixed(4) * 100}%\n`;
-      report += `Recall: ${(results.recall || 0).toFixed(4) * 100}%\n\n`;
+      
+      // Fix the type errors by ensuring we have numerical values
+      const accuracy = results.accuracy !== undefined ? results.accuracy : 0;
+      const precision = results.precision !== undefined ? results.precision : 0;
+      const recall = results.recall !== undefined ? results.recall : 0;
+      
+      report += `Accuracy: ${(accuracy * 100).toFixed(2)}%\n`;
+      report += `Precision: ${(precision * 100).toFixed(2)}%\n`;
+      report += `Recall: ${(recall * 100).toFixed(2)}%\n\n`;
     }
     
     report += "THREAT BREAKDOWN\n";
     report += "----------------\n";
     Object.entries(results.threatTypes).forEach(([type, count]) => {
       if (count > 0) {
-        // Fix: Ensure count is converted to string when concatenating
         report += `${type}: ${String(count)}\n`;
       }
     });
@@ -448,7 +453,7 @@ class AdaptiveDetector {
       report += "\n";
     }
     
-    report += "RECOMMENDATIONS\n";
+    report += "MITIGATION TASKS\n";
     report += "---------------\n";
     report += "1. Implement stricter access controls for sensitive data\n";
     report += "2. Provide additional security training for users\n";
