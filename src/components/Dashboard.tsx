@@ -62,66 +62,35 @@ const Dashboard = () => {
         throw new Error("Could not generate report");
       }
       
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4"
-      });
+      const pdf = new jsPDF();
       
-      // Logo and Title
-      const logoCanvas = document.createElement('canvas');
-      logoCanvas.width = 300;
-      logoCanvas.height = 80;
-      const ctx = logoCanvas.getContext('2d');
-      
-      if (ctx) {
-        ctx.fillStyle = "#4285F4";
-        ctx.font = 'bold 30px Arial';
-        ctx.fillText("SecureShield AI", 10, 40);
-        
-        // Draw logo box
-        ctx.fillStyle = "#34A853";
-        ctx.fillRect(230, 15, 30, 30);
-        
-        ctx.fillStyle = "#FBBC05";
-        ctx.beginPath();
-        ctx.arc(215, 30, 15, 0, Math.PI * 2);
-        ctx.fill();
-        
-        const logoImg = logoCanvas.toDataURL('image/png');
-        pdf.addImage(logoImg, 'PNG', 15, 10, 60, 15);
-      }
-      
-      // Report Title
+      // Add title and header
+      pdf.setFillColor(66, 133, 244);
+      pdf.rect(0, 0, pdf.internal.pageSize.width, 30, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(18);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(40, 40, 40);
-      pdf.text("Adaptive Security Threat Analysis Report", 20, 35);
+      pdf.text("Adaptive Data Leakage Detection Report", 20, 20);
       
-      // Metadata
-      pdf.setFontSize(10);
+      pdf.setFontSize(11);
+      pdf.setTextColor(100, 100, 100);
       pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(80, 80, 80);
-      pdf.text(`Generated: ${new Date().toLocaleString()}`, 20, 42);
+      pdf.text(`Generated on: ${new Date().toLocaleString()}`, 20, 40);
       
-      // If model was trained, add model metrics
-      if (metrics.modelTrained) {
-        pdf.text(`Model Performance: Accuracy: ${metrics.accuracy * 100}% | Precision: ${metrics.precision * 100}% | Recall: ${metrics.recall * 100}%`, 20, 47);
-      }
-      
-      // Add divider
-      pdf.setDrawColor(220, 220, 220);
-      pdf.line(20, 50, 190, 50);
-      
-      // EXECUTIVE SUMMARY
-      pdf.setFontSize(14);
+      // Executive Summary Section
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(0, 50, pdf.internal.pageSize.width, 12, 'F');
+      pdf.setTextColor(50, 50, 50);
       pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(40, 40, 40);
-      pdf.text("EXECUTIVE SUMMARY", 20, 60);
+      pdf.setFontSize(14);
+      pdf.text("EXECUTIVE SUMMARY", 20, 58);
       
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(60, 60, 60);
+      
+      // Create summary text
+      const threatPercentage = ((metrics.dataLeakageStats.potentialIncidents / metrics.userStats.total) * 100).toFixed(2);
       
       // Find major threat type
       let majorThreatType = "None";
@@ -134,454 +103,331 @@ const Dashboard = () => {
         }
       }
       
-      const threatPercentage = ((metrics.dataLeakageStats.potentialIncidents / metrics.userStats.total) * 100).toFixed(2);
+      pdf.text(`Total records analyzed: ${metrics.userStats.total}`, 25, 70);
+      pdf.text(`Potential threats detected: ${metrics.dataLeakageStats.potentialIncidents}`, 25, 78);
+      pdf.text(`Percentage of data with threats: ${threatPercentage}%`, 25, 86);
+      pdf.text(`Major threat identified: ${majorThreatType} (${majorThreatCount} instances)`, 25, 94);
       
-      // Summary text with bullet points
-      const summaryText = [
-        `• Total records analyzed: ${metrics.userStats.total.toLocaleString()}`,
-        `• Potential threats detected: ${metrics.dataLeakageStats.potentialIncidents}`,
-        `• Major threat identified: ${majorThreatType} (${majorThreatCount} instances)`,
-        `• Percentage of data with threats: ${threatPercentage}%`,
-        `• Critical risk incidents: ${metrics.dataLeakageStats.criticalRisk}`,
-        `• Medium risk incidents: ${metrics.dataLeakageStats.mediumRisk}`,
-        `• Threats successfully mitigated: ${metrics.dataLeakageStats.mitigated}`
-      ];
-      
-      let yPosition = 68;
-      summaryText.forEach(text => {
-        pdf.text(text, 25, yPosition);
-        yPosition += 7;
-      });
-      
-      // USER ACTIVITY SECTION
-      yPosition += 5;
-      pdf.setFontSize(14);
+      // Threat Breakdown Section
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(0, 110, pdf.internal.pageSize.width, 12, 'F');
+      pdf.setTextColor(50, 50, 50);
       pdf.setFont('helvetica', 'bold');
-      pdf.text("USER ACTIVITY OVERVIEW", 20, yPosition);
-      
-      yPosition += 10;
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'normal');
-      
-      const userActivityData = [
-        ['Total Users', metrics.userStats.total.toString()],
-        ['Active Users', metrics.userStats.active.toString()],
-        ['New Users (Last Week)', metrics.userStats.new.toString()],
-        ['Unauthorized Access Attempts', metrics.userStats.unapproved.toString()]
-      ];
-      
-      autoTable(pdf, {
-        startY: yPosition,
-        head: [['Category', 'Count']],
-        body: userActivityData,
-        theme: 'striped',
-        headStyles: { fillColor: [66, 133, 244], textColor: [255, 255, 255] },
-        styles: { fontSize: 10 }
-      });
-      
-      // THREAT DISTRIBUTION VISUALIZATION
-      // Get the Y position after the last table
-      const previousTableEndY = pdf.lastAutoTable?.finalY || yPosition + 30;
-      yPosition = previousTableEndY + 15;
-      
       pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text("THREAT DISTRIBUTION", 20, yPosition);
+      pdf.text("THREAT BREAKDOWN", 20, 118);
       
-      // Create a canvas element for the pie chart
-      const canvas = document.createElement('canvas');
-      canvas.width = 400;
-      canvas.height = (400/1.5);
-      document.body.appendChild(canvas);
-      
-      const pieCtx = canvas.getContext('2d');
-      if (pieCtx && metrics.anomalyDistribution && metrics.anomalyDistribution.length > 0) {
-        // Clear the canvas
-        pieCtx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        const colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
-        const total = metrics.anomalyDistribution.reduce((sum, item) => sum + item.value, 0);
-        
-        // Draw title
-        pieCtx.fillStyle = '#333';
-        pieCtx.font = 'bold 14px Arial';
-        pieCtx.fillText('Threat Types Distribution', 125, 20);
-        
-        // Draw pie chart if we have data
-        if (total > 0) {
-          let currentAngle = 0;
-          
-          metrics.anomalyDistribution.forEach((item, index) => {
-            // Draw slice
-            const sliceAngle = (item.value / total) * 2 * Math.PI;
-            
-            pieCtx.beginPath();
-            pieCtx.moveTo(100, 130);
-            pieCtx.arc(100, 130, 80, currentAngle, currentAngle + sliceAngle);
-            pieCtx.closePath();
-            
-            pieCtx.fillStyle = colors[index % colors.length];
-            pieCtx.fill();
-            
-            // Draw label in the middle of the slice
-            const labelAngle = currentAngle + sliceAngle / 2;
-            const labelRadius = 70;
-            const labelX = 100 + Math.cos(labelAngle) * labelRadius;
-            const labelY = 130 + Math.sin(labelAngle) * labelRadius;
-            
-            pieCtx.save();
-            pieCtx.translate(labelX, labelY);
-            
-            // Apply white outline to text
-            pieCtx.fillStyle = 'white';
-            pieCtx.font = 'bold 11px Arial';
-            
-            // Only add percentage label if it's significant enough
-            if (item.value / total > 0.1) {
-              pieCtx.fillText(`${Math.round((item.value / total) * 100)}%`, -10, 5);
-            }
-            
-            pieCtx.restore();
-            
-            currentAngle += sliceAngle;
-          });
-        }
-        
-        // Draw legend
-        let legendY = 80;
-        metrics.anomalyDistribution.forEach((item, index) => {
-          const y = legendY + index * 25;
-          
-          pieCtx.fillStyle = colors[index % colors.length];
-          pieCtx.fillRect(250, y - 10, 15, 15);
-          
-          pieCtx.fillStyle = '#333';
-          pieCtx.font = '12px Arial';
-          pieCtx.fillText(`${item.name}: ${item.value} (${Math.round((item.value / total) * 100)}%)`, 270, y);
-        });
-        
-        // Add the pie chart to PDF
-        const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', 30, yPosition + 5, 150, 150 / 1.5);
-        
-        // Clean up
-        document.body.removeChild(canvas);
-      }
-      
-      // NETWORK ACTIVITY CHART
-      // Add a new page
-      pdf.addPage();
-      
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text("NETWORK TRAFFIC & ALERTS", 20, 25);
-      
-      // Create canvas for network line chart
-      const lineCanvas = document.createElement('canvas');
-      lineCanvas.width = 500;
-      lineCanvas.height = 250;
-      document.body.appendChild(lineCanvas);
-      
-      const lineCtx = lineCanvas.getContext('2d');
-      if (lineCtx && metrics.networkData && metrics.networkData.length > 0) {
-        // Clear canvas
-        lineCtx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
-        
-        // Set up chart dimensions
-        const chartWidth = 400;
-        const chartHeight = 200;
-        const leftMargin = 50;
-        const topMargin = 30;
-        
-        // Find max values for scaling
-        const maxTraffic = Math.max(...metrics.networkData.map(d => d.Traffic));
-        const maxAlerts = Math.max(...metrics.networkData.map(d => d.Alerts));
-        
-        // Draw grid
-        lineCtx.strokeStyle = '#ddd';
-        lineCtx.beginPath();
-        
-        // Horizontal grid lines
-        for (let i = 0; i <= 5; i++) {
-          const y = topMargin + chartHeight - (i * (chartHeight / 5));
-          lineCtx.moveTo(leftMargin, y);
-          lineCtx.lineTo(leftMargin + chartWidth, y);
-          
-          // Add Y-axis labels
-          lineCtx.fillStyle = '#666';
-          lineCtx.font = '10px Arial';
-          lineCtx.fillText((maxTraffic * i / 5).toFixed(0), 10, y + 4);
-        }
-        
-        // Vertical grid lines & X-axis labels
-        for (let i = 0; i < metrics.networkData.length; i++) {
-          const x = leftMargin + (i * (chartWidth / (metrics.networkData.length - 1)));
-          lineCtx.moveTo(x, topMargin);
-          lineCtx.lineTo(x, topMargin + chartHeight);
-          
-          // Add X-axis labels
-          lineCtx.fillStyle = '#666';
-          lineCtx.font = '10px Arial';
-          lineCtx.fillText(metrics.networkData[i].name, x - 10, topMargin + chartHeight + 15);
-        }
-        
-        lineCtx.stroke();
-        
-        // Draw traffic line
-        lineCtx.strokeStyle = '#4285F4';
-        lineCtx.lineWidth = 2;
-        lineCtx.beginPath();
-        
-        metrics.networkData.forEach((item, index) => {
-          const x = leftMargin + (index * (chartWidth / (metrics.networkData.length - 1)));
-          const y = topMargin + chartHeight - ((item.Traffic / maxTraffic) * chartHeight);
-          
-          if (index === 0) {
-            lineCtx.moveTo(x, y);
-          } else {
-            lineCtx.lineTo(x, y);
-          }
-          
-          // Add dots at data points
-          lineCtx.fillStyle = '#4285F4';
-          lineCtx.beginPath();
-          lineCtx.arc(x, y, 4, 0, Math.PI * 2);
-          lineCtx.fill();
-        });
-        
-        lineCtx.stroke();
-        
-        // Draw alerts line
-        lineCtx.strokeStyle = '#EA4335';
-        lineCtx.lineWidth = 2;
-        lineCtx.beginPath();
-        
-        metrics.networkData.forEach((item, index) => {
-          const x = leftMargin + (index * (chartWidth / (metrics.networkData.length - 1)));
-          const y = topMargin + chartHeight - ((item.Alerts / maxAlerts) * chartHeight);
-          
-          if (index === 0) {
-            lineCtx.moveTo(x, y);
-          } else {
-            lineCtx.lineTo(x, y);
-          }
-          
-          // Add dots at data points
-          lineCtx.fillStyle = '#EA4335';
-          lineCtx.beginPath();
-          lineCtx.arc(x, y, 4, 0, Math.PI * 2);
-          lineCtx.fill();
-        });
-        
-        lineCtx.stroke();
-        
-        // Add legend
-        lineCtx.fillStyle = '#333';
-        lineCtx.font = 'bold 12px Arial';
-        lineCtx.fillText('Network Traffic & Alerts', 180, 15);
-        
-        lineCtx.fillStyle = '#4285F4';
-        lineCtx.fillRect(leftMargin, topMargin + chartHeight + 25, 15, 10);
-        lineCtx.fillStyle = '#333';
-        lineCtx.font = '11px Arial';
-        lineCtx.fillText('Traffic', leftMargin + 20, topMargin + chartHeight + 33);
-        
-        lineCtx.fillStyle = '#EA4335';
-        lineCtx.fillRect(leftMargin + 80, topMargin + chartHeight + 25, 15, 10);
-        lineCtx.fillStyle = '#333';
-        lineCtx.fillText('Alerts', leftMargin + 100, topMargin + chartHeight + 33);
-        
-        // Add the chart to PDF
-        const lineImgData = lineCanvas.toDataURL('image/png');
-        pdf.addImage(lineImgData, 'PNG', 20, 35, 170, 85);
-        
-        // Clean up
-        document.body.removeChild(lineCanvas);
-      }
-      
-      // THREAT DETAILS SECTION
-      yPosition = 130; // Position after network chart
-      
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text("DETAILED THREAT ANALYSIS", 20, yPosition);
-      
-      yPosition += 10;
-      
-      // Table of threat types
       const threatTypeData = Object.entries(metrics.threatTypes)
         .filter(([_, count]) => count > 0)
-        .map(([type, count]) => [type, count.toString()]);
-        
-      autoTable(pdf, {
-        startY: yPosition,
-        head: [['Threat Type', 'Count']],
-        body: threatTypeData,
-        theme: 'striped',
-        headStyles: { fillColor: [66, 133, 244], textColor: [255, 255, 255] },
-        styles: { fontSize: 10 }
-      });
+        .map(([type, count]) => [type, String(count)]);
       
-      // Add unauthorized users section if available
-      if (metrics.unauthorizedUsers && metrics.unauthorizedUsers.length > 0) {
-        const unauthorizedTableY = pdf.lastAutoTable?.finalY || yPosition + 30;
-        
-        pdf.setFontSize(14);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text("UNAUTHORIZED ACCESS ATTEMPTS", 20, unauthorizedTableY + 15);
-        
-        // Format unauthorized users data for table
-        const unauthorizedData = metrics.unauthorizedUsers.slice(0, 10).map(user => [user]);
-        if (metrics.unauthorizedUsers.length > 10) {
-          unauthorizedData.push([`... and ${metrics.unauthorizedUsers.length - 10} more`]);
-        }
-        
+      if (threatTypeData.length > 0) {
         autoTable(pdf, {
-          startY: unauthorizedTableY + 25,
-          head: [['User/IP Address']],
-          body: unauthorizedData,
+          startY: 125,
+          head: [['Threat Type', 'Count']],
+          body: threatTypeData,
           theme: 'striped',
-          headStyles: { fillColor: [234, 67, 53], textColor: [255, 255, 255] },
+          headStyles: { fillColor: [66, 133, 244], textColor: [255, 255, 255] },
           styles: { fontSize: 10 }
         });
       }
       
-      // PHISHING SECTION
-      if (metrics.phishingAttempts && metrics.phishingAttempts.length > 0) {
-        // Check if we need a new page based on remaining space
-        const phishingTableY = pdf.lastAutoTable?.finalY || 200;
+      // Get current Y position after the table
+      const autoTableOutput = autoTable as any;
+      let currentY = autoTableOutput.previous ? autoTableOutput.previous.finalY + 15 : 155;
+      
+      // Add Threat Distribution Pie Chart
+      if (metrics.anomalyDistribution && metrics.anomalyDistribution.length > 0) {
+        // Add title for the chart
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(0, currentY, pdf.internal.pageSize.width, 12, 'F');
+        pdf.setTextColor(50, 50, 50);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text("THREAT DISTRIBUTION", 20, currentY + 8);
         
-        if (phishingTableY > 220) {
-          pdf.addPage();
-          pdf.setFontSize(14);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text("PHISHING ATTEMPTS", 20, 25);
+        // Add a canvas element to draw the chart
+        const canvas = document.createElement('canvas');
+        canvas.width = 500;
+        canvas.height = 250;
+        document.body.appendChild(canvas);
+        
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          // Draw a simple pie chart
+          const colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+          const total = metrics.anomalyDistribution.reduce((sum, item) => sum + item.value, 0);
+          let currentAngle = 0;
           
-          // Format phishing data for table
-          const phishingData = metrics.phishingAttempts.slice(0, 10).map(url => [url]);
-          if (metrics.phishingAttempts.length > 10) {
-            phishingData.push([`... and ${metrics.phishingAttempts.length - 10} more`]);
-          }
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
           
-          autoTable(pdf, {
-            startY: 35,
-            head: [['URL/Email']],
-            body: phishingData,
-            theme: 'striped',
-            headStyles: { fillColor: [251, 188, 5], textColor: [60, 60, 60] },
-            styles: { fontSize: 9 },
-            columnStyles: {
-              0: { cellWidth: 150 }
-            }
+          // Draw pie slices
+          metrics.anomalyDistribution.forEach((item, index) => {
+            const sliceAngle = (item.value / total) * 2 * Math.PI;
+            
+            ctx.beginPath();
+            ctx.moveTo(150, 125);
+            ctx.arc(150, 125, 100, currentAngle, currentAngle + sliceAngle);
+            ctx.closePath();
+            
+            ctx.fillStyle = colors[index % colors.length];
+            ctx.fill();
+            
+            // Add label
+            const labelAngle = currentAngle + sliceAngle / 2;
+            const labelX = 150 + Math.cos(labelAngle) * 130;
+            const labelY = 125 + Math.sin(labelAngle) * 130;
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.fillText(`${item.name} (${Math.round((item.value / total) * 100)}%)`, labelX, labelY);
+            
+            currentAngle += sliceAngle;
           });
-        } else {
-          pdf.setFontSize(14);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text("PHISHING ATTEMPTS", 20, phishingTableY + 15);
           
-          // Format phishing data for table
-          const phishingData = metrics.phishingAttempts.slice(0, 10).map(url => [url]);
-          if (metrics.phishingAttempts.length > 10) {
-            phishingData.push([`... and ${metrics.phishingAttempts.length - 10} more`]);
-          }
+          // Add legend
+          ctx.fillStyle = '#333';
+          ctx.font = '14px Arial';
+          ctx.fillText('Threat Types Distribution', 300, 50);
           
-          autoTable(pdf, {
-            startY: phishingTableY + 25,
-            head: [['URL/Email']],
-            body: phishingData,
-            theme: 'striped',
-            headStyles: { fillColor: [251, 188, 5], textColor: [60, 60, 60] },
-            styles: { fontSize: 9 },
-            columnStyles: {
-              0: { cellWidth: 150 }
-            }
+          metrics.anomalyDistribution.forEach((item, index) => {
+            const y = 80 + index * 25;
+            
+            ctx.fillStyle = colors[index % colors.length];
+            ctx.fillRect(300, y - 10, 15, 15);
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.fillText(`${item.name}: ${item.value}`, 325, y);
           });
+          
+          // Add the chart to PDF
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', 20, currentY + 15, 170, 85);
+          
+          // Clean up
+          document.body.removeChild(canvas);
         }
+        
+        currentY += 110; // Update Y position after chart
       }
       
-      // RECOMMENDATIONS SECTION (always on a new page)
-      pdf.addPage();
+      // Add Network Traffic Chart
+      if (metrics.networkData && metrics.networkData.length > 0) {
+        // Check if we need a new page
+        if (currentY > 200) {
+          pdf.addPage();
+          currentY = 20;
+        }
+        
+        // Add title for the chart
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(0, currentY, pdf.internal.pageSize.width, 12, 'F');
+        pdf.setTextColor(50, 50, 50);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text("NETWORK TRAFFIC & ALERTS", 20, currentY + 8);
+        
+        // Create a canvas for the chart
+        const canvas = document.createElement('canvas');
+        canvas.width = 500;
+        canvas.height = 250;
+        document.body.appendChild(canvas);
+        
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          // Draw a simple line chart
+          const maxTraffic = Math.max(...metrics.networkData.map(d => d.Traffic));
+          const maxAlerts = Math.max(...metrics.networkData.map(d => d.Alerts));
+          
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw grid
+          ctx.strokeStyle = '#ddd';
+          ctx.beginPath();
+          for (let i = 0; i <= 5; i++) {
+            const y = 200 - (i * 40);
+            ctx.moveTo(50, y);
+            ctx.lineTo(450, y);
+          }
+          for (let i = 0; i < metrics.networkData.length; i++) {
+            const x = 50 + (i * (400 / (metrics.networkData.length - 1)));
+            ctx.moveTo(x, 40);
+            ctx.lineTo(x, 200);
+          }
+          ctx.stroke();
+          
+          // Draw Traffic line
+          ctx.strokeStyle = '#8884d8';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          
+          metrics.networkData.forEach((item, index) => {
+            const x = 50 + (index * (400 / (metrics.networkData.length - 1)));
+            const y = 200 - ((item.Traffic / maxTraffic) * 160);
+            
+            if (index === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          });
+          ctx.stroke();
+          
+          // Draw Alerts line
+          ctx.strokeStyle = '#ff5555';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          
+          metrics.networkData.forEach((item, index) => {
+            const x = 50 + (index * (400 / (metrics.networkData.length - 1)));
+            const y = 200 - ((item.Alerts / maxAlerts) * 160);
+            
+            if (index === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          });
+          ctx.stroke();
+          
+          // Add labels
+          ctx.fillStyle = '#333';
+          ctx.font = '14px Arial';
+          ctx.fillText('Network Traffic & Alerts', 180, 25);
+          
+          ctx.font = '12px Arial';
+          metrics.networkData.forEach((item, index) => {
+            const x = 50 + (index * (400 / (metrics.networkData.length - 1)));
+            ctx.fillText(item.name, x - 10, 220);
+          });
+          
+          // Add legend
+          ctx.fillStyle = '#8884d8';
+          ctx.fillRect(50, 235, 15, 15);
+          ctx.fillStyle = '#333';
+          ctx.fillText('Traffic', 70, 245);
+          
+          ctx.fillStyle = '#ff5555';
+          ctx.fillRect(150, 235, 15, 15);
+          ctx.fillStyle = '#333';
+          ctx.fillText('Alerts', 170, 245);
+          
+          // Add the chart to PDF
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', 20, currentY + 15, 170, 85);
+          
+          // Clean up
+          document.body.removeChild(canvas);
+        }
+        
+        currentY += 110; // Update Y position after chart
+      }
       
-      pdf.setFontSize(14);
+      // Unauthorized Access Section (new page if needed)
+      if (currentY > 200) {
+        pdf.addPage();
+        currentY = 20;
+      }
+      
+      if (metrics.unauthorizedUsers && metrics.unauthorizedUsers.length > 0) {
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(0, currentY, pdf.internal.pageSize.width, 12, 'F');
+        pdf.setTextColor(50, 50, 50);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text("UNAUTHORIZED ACCESS ATTEMPTS", 20, currentY + 8);
+        
+        currentY += 15;
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(60, 60, 60);
+        
+        const usersToDisplay = metrics.unauthorizedUsers.slice(0, 10);
+        usersToDisplay.forEach((user, index) => {
+          pdf.text(`• ${user}`, 25, currentY + (index * 8));
+        });
+        
+        if (metrics.unauthorizedUsers.length > 10) {
+          pdf.text(`• ... and ${metrics.unauthorizedUsers.length - 10} more`, 25, currentY + (usersToDisplay.length * 8));
+          currentY += (usersToDisplay.length + 1) * 8;
+        } else {
+          currentY += usersToDisplay.length * 8;
+        }
+        
+        currentY += 15;
+      }
+      
+      // Phishing Attempts Section
+      if (currentY > 210) {
+        pdf.addPage();
+        currentY = 20;
+      }
+      
+      if (metrics.phishingAttempts && metrics.phishingAttempts.length > 0) {
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(0, currentY, pdf.internal.pageSize.width, 12, 'F');
+        pdf.setTextColor(50, 50, 50);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text("PHISHING ATTEMPTS", 20, currentY + 8);
+        
+        currentY += 15;
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(60, 60, 60);
+        
+        const phishingToDisplay = metrics.phishingAttempts.slice(0, 10);
+        phishingToDisplay.forEach((url, index) => {
+          const displayUrl = url.length > 50 ? url.substring(0, 47) + "..." : url;
+          pdf.text(`• ${displayUrl}`, 25, currentY + (index * 8));
+        });
+        
+        if (metrics.phishingAttempts.length > 10) {
+          pdf.text(`• ... and ${metrics.phishingAttempts.length - 10} more`, 25, currentY + (phishingToDisplay.length * 8));
+          currentY += (phishingToDisplay.length + 1) * 8;
+        } else {
+          currentY += phishingToDisplay.length * 8;
+        }
+        
+        currentY += 15;
+      }
+      
+      // Recommendations Section
+      if (currentY > 210) {
+        pdf.addPage();
+        currentY = 20;
+      }
+      
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(0, currentY, pdf.internal.pageSize.width, 12, 'F');
+      pdf.setTextColor(50, 50, 50);
       pdf.setFont('helvetica', 'bold');
-      pdf.text("SECURITY RECOMMENDATIONS", 20, 25);
+      pdf.setFontSize(14);
+      pdf.text("RECOMMENDATIONS", 20, currentY + 8);
       
+      currentY += 15;
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(60, 60, 60);
       
-      // Generate recommendations based on detected threats
       const recommendations = [
-        {
-          title: "Implement Multi-Factor Authentication",
-          description: "Require MFA for all users to prevent unauthorized access, especially for accounts with elevated privileges."
-        },
-        {
-          title: "Security Awareness Training",
-          description: "Conduct regular phishing simulations and security training to educate users on recognizing threats."
-        },
-        {
-          title: "Data Loss Prevention",
-          description: "Implement DLP solutions to monitor and prevent sensitive data exfiltration."
-        },
-        {
-          title: "Network Segmentation",
-          description: "Segment networks to limit lateral movement in case of a breach."
-        },
-        {
-          title: "Regular Security Audits",
-          description: "Conduct quarterly security audits to identify and address vulnerabilities."
-        }
+        "Implement stricter access controls for sensitive data",
+        "Provide additional security training for users",
+        "Update phishing detection and prevention systems",
+        "Monitor unusual data access patterns",
+        "Review and update data leak prevention policies"
       ];
       
-      // Add highlighted recommendations
-      let recY = 35;
-      recommendations.forEach((rec, index) => {
-        pdf.setFillColor(245, 245, 245);
-        pdf.roundedRect(20, recY, 170, 20, 2, 2, 'F');
-        
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(11);
-        pdf.setTextColor(40, 40, 40);
-        pdf.text(`${index + 1}. ${rec.title}`, 25, recY + 7);
-        
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(10);
-        pdf.setTextColor(80, 80, 80);
-        pdf.text(rec.description, 25, recY + 15);
-        
-        recY += 25;
+      recommendations.forEach((recommendation, index) => {
+        pdf.text(`${index + 1}. ${recommendation}`, 25, currentY + (index * 8));
       });
       
-      // Add important note about adaptive learning
-      pdf.setFillColor(230, 244, 255);
-      pdf.roundedRect(20, recY + 10, 170, 30, 2, 2, 'F');
-      
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(20, 80, 150);
-      pdf.text("CONTINUOUS IMPROVEMENT", 25, recY + 20);
-      
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(40, 80, 120);
-      pdf.text("Our adaptive security system continuously learns from new data patterns to", 25, recY + 28);
-      pdf.text("improve threat detection. Regular uploads of security logs will enhance", 25, recY + 36);
-      pdf.text("the system's accuracy and effectiveness in protecting your organization.", 25, recY + 44);
-      
-      // Add footer
-      const footerY = 280;
-      pdf.setFillColor(245, 245, 245);
-      pdf.rect(0, footerY, 210, 17, 'F');
-      
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
-      pdf.setTextColor(100, 100, 100);
-      pdf.text("Generated by SecureShield AI - Adaptive Security Analytics", 105, footerY + 7, { align: 'center' });
-      
-      // Save the PDF
+      // Save and download the PDF
       pdf.save("security-threat-report.pdf");
       
       toast({
         title: "Report downloaded",
-        description: "Complete security threat analysis report has been generated",
+        description: "Security threat analysis report has been downloaded as PDF",
       });
     } catch (error) {
       console.error("Error generating PDF report:", error);
