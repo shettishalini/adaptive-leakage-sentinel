@@ -826,7 +826,7 @@ const Dashboard = () => {
                         <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                           <Pie
                             data={anomalyDistribution}
-                            cx="40%"
+                            cx="35%"
                             cy="50%"
                             innerRadius={45}
                             outerRadius={80}
@@ -845,12 +845,12 @@ const Dashboard = () => {
                             layout="vertical" 
                             verticalAlign="middle" 
                             align="right"
-                            wrapperStyle={{ paddingLeft: "20px" }}
+                            wrapperStyle={{ paddingLeft: "40px" }}
                             formatter={(value, entry, index) => {
-                              const safeIndex = index < anomalyDistribution.length ? index : 0;
+                              if (index >= anomalyDistribution.length) return null;
                               return (
-                                <span style={{ color: '#333333', fontSize: '12px' }}>
-                                  {`${value}: ${anomalyDistribution[safeIndex].value}`}
+                                <span style={{ color: '#333333', fontSize: '12px', paddingLeft: '8px' }}>
+                                  {`${value}: ${anomalyDistribution[index].value}`}
                                 </span>
                               );
                             }}
