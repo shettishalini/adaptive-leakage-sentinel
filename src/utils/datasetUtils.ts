@@ -114,3 +114,49 @@ export const generateAlertDescription = (threatType: string): string => {
       return "Unusual pattern detected in dataset";
   }
 };
+
+// Generate mitigation tasks based on threat types
+export const generateMitigationTasks = (threatTypes: Record<string, number>): string[] => {
+  const commonTasks = [
+    "Implement data loss prevention (DLP) solutions across all systems",
+    "Set up regular security awareness training for all employees",
+    "Conduct periodic security assessments and penetration testing"
+  ];
+  
+  const specificTasks: string[] = [];
+  
+  // Add specific tasks based on threat types
+  if (threatTypes["Unauthorized Access"] > 0) {
+    specificTasks.push(
+      "Implement multi-factor authentication for all accounts",
+      "Review access control lists and implement principle of least privilege",
+      "Set up continuous monitoring of authentication events"
+    );
+  }
+  
+  if (threatTypes["Phishing Attempt"] > 0) {
+    specificTasks.push(
+      "Conduct targeted phishing awareness training",
+      "Deploy advanced email filtering solutions",
+      "Implement URL filtering and web gateway protections"
+    );
+  }
+  
+  if (threatTypes["Sensitive Data Exposure"] > 0) {
+    specificTasks.push(
+      "Encrypt sensitive data at rest and in transit",
+      "Implement data classification and handling procedures",
+      "Deploy endpoint data protection controls"
+    );
+  }
+  
+  if (threatTypes["Data Exfiltration"] > 0) {
+    specificTasks.push(
+      "Deploy network traffic analysis tools",
+      "Set up data exfiltration alerts for unusual outbound connections",
+      "Implement egress filtering at network boundaries"
+    );
+  }
+  
+  return [...specificTasks, ...commonTasks];
+};

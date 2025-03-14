@@ -26,7 +26,8 @@ const initialMetrics: DatasetMetrics = {
   unauthorizedUsers: [],
   phishingAttempts: [],
   dataSensitivity: {},
-  report: null
+  report: null,
+  mitigationTasks: []
 };
 
 const DatasetContext = createContext<DatasetContextProps | undefined>(undefined);

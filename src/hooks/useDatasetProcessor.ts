@@ -7,11 +7,25 @@ import { generateNetworkData, generateAlerts } from "@/utils/datasetUtils";
 export const useDatasetProcessor = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // Generate report from processed data
+  // Generate report from processed data with mitigation tasks instead of recommendations
   const generateReport = (metrics: DatasetMetrics | null): string | null => {
     if (!metrics?.csvData) return null;
     
-    return adaptiveDetector.generateReport(metrics.csvData);
+    // Generate custom report using adapted detector with mitigation tasks
+    const baseReport = adaptiveDetector.generateReport(metrics.csvData);
+    
+    // If there are mitigation tasks, add them to the report
+    if (metrics.mitigationTasks && metrics.mitigationTasks.length > 0) {
+      // Replace "Recommendations" section with "Mitigation Tasks"
+      const reportWithoutRecommendations = baseReport?.replace(
+        /## Recommendations[\s\S]*?(?=##|$)/,
+        "## Mitigation Tasks\n\n" + metrics.mitigationTasks.map((task, index) => `${index + 1}. ${task}`).join("\n") + "\n\n"
+      );
+      
+      return reportWithoutRecommendations;
+    }
+    
+    return baseReport;
   };
 
   // Process CSV file and generate metrics using our adaptive detector
@@ -47,6 +61,18 @@ export const useDatasetProcessor = () => {
             // Get threat count from results
             const totalThreats = detectorResults.predictions.filter(p => p === 1).length;
             
+            // Generate mitigation tasks based on threat types
+            const mitigationTasks = [
+              "Implement multi-factor authentication for all user accounts",
+              "Conduct phishing awareness training for all employees",
+              "Encrypt sensitive data at rest and in transit",
+              "Set up data loss prevention (DLP) solutions",
+              "Review and restrict access permissions to sensitive systems",
+              "Deploy endpoint detection and response (EDR) solutions",
+              "Configure anomaly detection and behavioral monitoring",
+              "Perform regular security audits and penetration testing"
+            ];
+            
             // Generate metrics based on detector results
             const generatedMetrics: DatasetMetrics = {
               userStats: {
@@ -77,6 +103,7 @@ export const useDatasetProcessor = () => {
               phishingAttempts: detectorResults.phishingAttempts,
               dataSensitivity: detectorResults.dataSensitivity,
               report: null, // Will be generated on download
+              mitigationTasks: mitigationTasks,
               modelTrained: detectorResults.modelTrained || false,
               accuracy: detectorResults.accuracy,
               precision: detectorResults.precision,

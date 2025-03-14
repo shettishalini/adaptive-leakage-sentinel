@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Upload, FileText, CheckCircle, XCircle, Shield, Download, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,9 +44,28 @@ const DatasetUpload = () => {
     setIsTraining(true);
     
     try {
+      // Add mitigation tasks to the metrics
       const metrics = await processCSVFile(file);
       
-      setMetrics(metrics);
+      // Add mitigation tasks based on threat types
+      const mitigationTasks = [
+        "Implement multi-factor authentication for all user accounts",
+        "Conduct phishing awareness training for all employees",
+        "Encrypt sensitive data at rest and in transit",
+        "Implement data loss prevention (DLP) solutions",
+        "Review and restrict access permissions to sensitive systems",
+        "Deploy endpoint detection and response (EDR) solutions",
+        "Set up anomaly detection and behavioral monitoring",
+        "Conduct regular security audits and penetration testing"
+      ];
+      
+      // Update metrics with mitigation tasks
+      const updatedMetrics = {
+        ...metrics,
+        mitigationTasks
+      };
+      
+      setMetrics(updatedMetrics);
       setIsDatasetUploaded(true);
       
       setUploadSuccess(true);
