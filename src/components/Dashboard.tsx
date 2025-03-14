@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Label } from "recharts";
 import {
   Shield,
   AlertTriangle,
@@ -174,30 +173,38 @@ const Dashboard = () => {
             
             // Add label
             const labelAngle = currentAngle + sliceAngle / 2;
-            const labelX = 150 + Math.cos(labelAngle) * 130;
-            const labelY = 125 + Math.sin(labelAngle) * 130;
+            const labelDistance = 130; // Distance from center to label
+            const labelX = 150 + Math.cos(labelAngle) * labelDistance;
+            const labelY = 125 + Math.sin(labelAngle) * labelDistance;
             
             ctx.fillStyle = '#333';
             ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
             ctx.fillText(`${item.name} (${Math.round((item.value / total) * 100)}%)`, labelX, labelY);
             
             currentAngle += sliceAngle;
           });
           
-          // Add legend
+          // Add title and legend
           ctx.fillStyle = '#333';
-          ctx.font = '14px Arial';
+          ctx.font = 'bold 14px Arial';
+          ctx.textAlign = 'center';
           ctx.fillText('Threat Types Distribution', 300, 50);
           
+          // Draw legend in a clearer format
+          ctx.textAlign = 'left';
+          ctx.font = '12px Arial';
           metrics.anomalyDistribution.forEach((item, index) => {
             const y = 80 + index * 25;
             
+            // Color box
             ctx.fillStyle = colors[index % colors.length];
-            ctx.fillRect(300, y - 10, 15, 15);
+            ctx.fillRect(260, y - 10, 15, 15);
             
+            // Legend text with count
             ctx.fillStyle = '#333';
             ctx.font = '12px Arial';
-            ctx.fillText(`${item.name}: ${item.value}`, 325, y);
+            ctx.fillText(`${item.name}: ${item.value}`, 285, y);
           });
           
           // Add the chart to PDF
@@ -392,7 +399,7 @@ const Dashboard = () => {
         currentY += 15;
       }
       
-      // Recommendations Section
+      // MITIGATION TASKS Section
       if (currentY > 210) {
         pdf.addPage();
         currentY = 20;
@@ -403,14 +410,14 @@ const Dashboard = () => {
       pdf.setTextColor(50, 50, 50);
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(14);
-      pdf.text("RECOMMENDATIONS", 20, currentY + 8);
+      pdf.text("MITIGATION TASKS", 20, currentY + 8);
       
       currentY += 15;
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(60, 60, 60);
       
-      const recommendations = [
+      const tasks = metrics.mitigationTasks || [
         "Implement stricter access controls for sensitive data",
         "Provide additional security training for users",
         "Update phishing detection and prevention systems",
@@ -418,8 +425,8 @@ const Dashboard = () => {
         "Review and update data leak prevention policies"
       ];
       
-      recommendations.forEach((recommendation, index) => {
-        pdf.text(`${index + 1}. ${recommendation}`, 25, currentY + (index * 8));
+      tasks.forEach((task, index) => {
+        pdf.text(`${index + 1}. ${task}`, 25, currentY + (index * 8));
       });
       
       // Save and download the PDF
@@ -813,25 +820,38 @@ const Dashboard = () => {
 
                   <div>
                     <h4 className="text-sm font-medium mb-3">Threat Distribution by Type</h4>
-                    <div className="h-[180px] w-full">
+                    <div className="h-[220px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
                             data={anomalyDistribution}
-                            cx="50%"
+                            cx="40%"
                             cy="50%"
                             innerRadius={45}
-                            outerRadius={70}
+                            outerRadius={80}
                             fill="#8884d8"
-                            paddingAngle={5}
+                            paddingAngle={2}
                             dataKey="value"
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            nameKey="name"
+                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                            labelLine={false}
                           >
                             {anomalyDistribution.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
+                            <Label position="center" value="Threats" />
                           </Pie>
-                          <Tooltip />
+                          <Legend 
+                            layout="vertical" 
+                            verticalAlign="middle" 
+                            align="right"
+                            formatter={(value, entry, index) => (
+                              <span style={{ color: '#333333' }}>{`${value}: ${anomalyDistribution[index].value}`}</span>
+                            )}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [`${value} incidents`, `${name}`]} 
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
