@@ -36,7 +36,7 @@ export interface DatasetMetrics {
   phishingAttempts: string[];
   dataSensitivity: Record<string, string>;
   report: string | null;
-  mitigationTasks: string[]; // Make sure this exists
+  mitigationTasks: string[]; 
   modelTrained?: boolean;
   accuracy?: number;
   precision?: number;

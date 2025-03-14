@@ -461,6 +461,7 @@ const Dashboard = () => {
     { name: "File Access", value: 30 },
     { name: "User Behavior", value: 15 },
     { name: "Database", value: 10 },
+    { name: "Data Exposure", value: 25 }
   ];
 
   const defaultUserStats = {
@@ -797,7 +798,7 @@ const Dashboard = () => {
               <div className="bg-white rounded-xl p-6 shadow-sm h-full">
                 <h3 className="font-medium mb-6">Threat Analytics</h3>
 
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-8">
                   <div>
                     <h4 className="text-sm font-medium mb-3">Network Traffic & Alerts</h4>
                     <div className="h-[180px] w-full">
@@ -819,10 +820,10 @@ const Dashboard = () => {
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-medium mb-3">Threat Distribution by Type</h4>
-                    <div className="h-[220px] w-full">
+                    <h4 className="text-sm font-medium mb-5">Threat Distribution by Type</h4>
+                    <div className="h-[250px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
+                        <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                           <Pie
                             data={anomalyDistribution}
                             cx="40%"
@@ -834,20 +835,25 @@ const Dashboard = () => {
                             dataKey="value"
                             nameKey="name"
                             label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                            labelLine={false}
+                            labelLine={true}
                           >
                             {anomalyDistribution.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
-                            <Label position="center" value="Threats" />
                           </Pie>
                           <Legend 
                             layout="vertical" 
                             verticalAlign="middle" 
                             align="right"
-                            formatter={(value, entry, index) => (
-                              <span style={{ color: '#333333' }}>{`${value}: ${anomalyDistribution[index].value}`}</span>
-                            )}
+                            wrapperStyle={{ paddingLeft: "20px" }}
+                            formatter={(value, entry, index) => {
+                              const safeIndex = index < anomalyDistribution.length ? index : 0;
+                              return (
+                                <span style={{ color: '#333333', fontSize: '12px' }}>
+                                  {`${value}: ${anomalyDistribution[safeIndex].value}`}
+                                </span>
+                              );
+                            }}
                           />
                           <Tooltip 
                             formatter={(value, name) => [`${value} incidents`, `${name}`]} 
