@@ -17,7 +17,7 @@ const ThreatDistributionChart = ({ anomalyDistribution }: ThreatDistributionChar
   return (
     <div>
       <h4 className="text-sm font-medium mb-5">Threat Distribution by Type</h4>
-      <div className="h-[250px] w-full">
+      <div className="h-[300px] w-full"> {/* Increased height for better spacing */}
         <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
             <Pie
@@ -47,10 +47,7 @@ const ThreatDistributionChart = ({ anomalyDistribution }: ThreatDistributionChar
                 width: "45%"
               }}
               formatter={(value, entry, index) => {
-                // Safely handle the index checking
-                if (index === undefined) return null;
-                
-                // Find the correct data entry by name (value) instead of relying on index
+                // Find the correct data entry by name instead of relying on index
                 const dataEntry = anomalyDistribution.find(item => item.name === value);
                 
                 if (!dataEntry) return null;
