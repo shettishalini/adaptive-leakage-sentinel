@@ -12,7 +12,7 @@ interface ThreatDistributionChartProps {
 }
 
 const ThreatDistributionChart = ({ anomalyDistribution }: ThreatDistributionChartProps) => {
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
   return (
     <div>
@@ -47,7 +47,14 @@ const ThreatDistributionChart = ({ anomalyDistribution }: ThreatDistributionChar
                 width: "45%"
               }}
               formatter={(value, entry, index) => {
-                if (index === undefined || index >= anomalyDistribution.length) return null;
+                // Safely handle the index checking
+                if (index === undefined) return null;
+                
+                // Find the correct data entry by name (value) instead of relying on index
+                const dataEntry = anomalyDistribution.find(item => item.name === value);
+                
+                if (!dataEntry) return null;
+                
                 return (
                   <span style={{ 
                     color: '#333333', 
@@ -56,7 +63,7 @@ const ThreatDistributionChart = ({ anomalyDistribution }: ThreatDistributionChar
                     display: 'inline-block',
                     marginBottom: '4px'
                   }}>
-                    {`${value}: ${anomalyDistribution[index].value}`}
+                    {`${value}: ${dataEntry.value}`}
                   </span>
                 );
               }}
