@@ -17,12 +17,12 @@ const ThreatDistributionChart = ({ anomalyDistribution }: ThreatDistributionChar
   return (
     <div>
       <h4 className="text-sm font-medium mb-5">Threat Distribution by Type</h4>
-      <div className="h-[300px] w-full"> {/* Increased height for better spacing */}
+      <div className="h-[350px] w-full"> {/* Increased height for better spacing */}
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+          <PieChart margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
             <Pie
               data={anomalyDistribution}
-              cx="30%"
+              cx="40%"
               cy="50%"
               innerRadius={45}
               outerRadius={80}
@@ -30,7 +30,10 @@ const ThreatDistributionChart = ({ anomalyDistribution }: ThreatDistributionChar
               paddingAngle={2}
               dataKey="value"
               nameKey="name"
-              label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+              label={({ name, percent }) => {
+                // Make sure the name is visible in the label
+                return `${name} (${(percent * 100).toFixed(0)}%)`;
+              }}
               labelLine={true}
             >
               {anomalyDistribution.map((entry, index) => (
@@ -42,9 +45,9 @@ const ThreatDistributionChart = ({ anomalyDistribution }: ThreatDistributionChar
               verticalAlign="middle" 
               align="right"
               wrapperStyle={{ 
-                paddingLeft: "80px", 
-                right: 20,
-                width: "45%"
+                paddingLeft: "40px", 
+                right: 0,
+                width: "40%"
               }}
               formatter={(value, entry, index) => {
                 // Find the correct data entry by name instead of relying on index
@@ -52,13 +55,17 @@ const ThreatDistributionChart = ({ anomalyDistribution }: ThreatDistributionChar
                 
                 if (!dataEntry) return null;
                 
+                // Match color to the correct data entry
+                const colorIndex = anomalyDistribution.findIndex(item => item.name === value);
+                const color = COLORS[colorIndex % COLORS.length];
+                
                 return (
                   <span style={{ 
                     color: '#333333', 
                     fontSize: '12px', 
                     paddingLeft: '8px',
                     display: 'inline-block',
-                    marginBottom: '4px'
+                    marginBottom: '8px'
                   }}>
                     {`${value}: ${dataEntry.value}`}
                   </span>

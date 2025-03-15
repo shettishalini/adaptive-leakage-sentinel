@@ -1,4 +1,3 @@
-
 import React from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -116,14 +115,14 @@ const usePdfReportGenerator = ({ metrics, generateReport, isDatasetUploaded }: P
         
         // Add a canvas element to draw the chart
         const canvas = document.createElement('canvas');
-        canvas.width = 500;
-        canvas.height = 250;
+        canvas.width = 600;
+        canvas.height = 300;
         document.body.appendChild(canvas);
         
         const ctx = canvas.getContext('2d');
         if (ctx) {
           // Draw a simple pie chart
-          const colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+          const colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
           const total = metrics.anomalyDistribution.reduce((sum, item) => sum + item.value, 0);
           let currentAngle = 0;
           
@@ -143,49 +142,50 @@ const usePdfReportGenerator = ({ metrics, generateReport, isDatasetUploaded }: P
             
             // Add label
             const labelAngle = currentAngle + sliceAngle / 2;
-            const labelDistance = 130; // Distance from center to label
+            const labelDistance = 120;
             const labelX = 150 + Math.cos(labelAngle) * labelDistance;
             const labelY = 125 + Math.sin(labelAngle) * labelDistance;
             
             ctx.fillStyle = '#333';
             ctx.font = '12px Arial';
             ctx.textAlign = 'center';
+            
             ctx.fillText(`${item.name} (${Math.round((item.value / total) * 100)}%)`, labelX, labelY);
             
             currentAngle += sliceAngle;
           });
           
-          // Add title and legend
+          // Add title and legend with more separation
           ctx.fillStyle = '#333';
           ctx.font = 'bold 14px Arial';
           ctx.textAlign = 'center';
-          ctx.fillText('Threat Types Distribution', 300, 50);
+          ctx.fillText('Threat Types Distribution', 350, 40);
           
-          // Draw legend in a clearer format
+          // Draw legend in a clearer format with more space
           ctx.textAlign = 'left';
           ctx.font = '12px Arial';
           metrics.anomalyDistribution.forEach((item, index) => {
-            const y = 80 + index * 25;
+            const y = 70 + index * 30;
             
             // Color box
             ctx.fillStyle = colors[index % colors.length];
-            ctx.fillRect(260, y - 10, 15, 15);
+            ctx.fillRect(300, y - 10, 15, 15);
             
-            // Legend text with count
+            // Legend text with count - ensure all names are displayed
             ctx.fillStyle = '#333';
             ctx.font = '12px Arial';
-            ctx.fillText(`${item.name}: ${item.value}`, 285, y);
+            ctx.fillText(`${item.name}: ${item.value}`, 325, y);
           });
           
-          // Add the chart to PDF
+          // Add the chart to PDF with more space
           const imgData = canvas.toDataURL('image/png');
-          pdf.addImage(imgData, 'PNG', 20, currentY + 15, 170, 85);
+          pdf.addImage(imgData, 'PNG', 10, currentY + 15, 190, 95);
           
           // Clean up
           document.body.removeChild(canvas);
         }
         
-        currentY += 110; // Update Y position after chart
+        currentY += 120;
       }
       
       // Add Network Traffic Chart
@@ -297,7 +297,7 @@ const usePdfReportGenerator = ({ metrics, generateReport, isDatasetUploaded }: P
           document.body.removeChild(canvas);
         }
         
-        currentY += 110; // Update Y position after chart
+        currentY += 110;
       }
       
       // Unauthorized Access Section (new page if needed)
