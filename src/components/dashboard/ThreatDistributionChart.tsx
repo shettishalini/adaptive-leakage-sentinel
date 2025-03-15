@@ -22,7 +22,7 @@ const ThreatDistributionChart = ({ anomalyDistribution }: ThreatDistributionChar
           <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
             <Pie
               data={anomalyDistribution}
-              cx="35%"
+              cx="30%"
               cy="50%"
               innerRadius={45}
               outerRadius={80}
@@ -41,9 +41,9 @@ const ThreatDistributionChart = ({ anomalyDistribution }: ThreatDistributionChar
               layout="vertical" 
               verticalAlign="middle" 
               align="right"
-              wrapperStyle={{ paddingLeft: "40px" }}
+              wrapperStyle={{ paddingLeft: "60px" }}
               formatter={(value, entry, index) => {
-                if (index >= anomalyDistribution.length) return null;
+                if (index === undefined || index >= anomalyDistribution.length) return null;
                 return (
                   <span style={{ color: '#333333', fontSize: '12px', paddingLeft: '8px' }}>
                     {`${value}: ${anomalyDistribution[index].value}`}
